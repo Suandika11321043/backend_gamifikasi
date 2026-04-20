@@ -2,6 +2,7 @@ package com.example.gamifikasi.controller;
 
 import com.example.gamifikasi.dto.LevelDto;
 import com.example.gamifikasi.service.LevelService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class LevelController {
 
     // Create Level
     @PostMapping
-    public ResponseEntity<LevelDto> createLevel(@RequestBody LevelDto levelDto) {
+    public ResponseEntity<LevelDto> createLevel(@Valid @RequestBody LevelDto levelDto) {
         try {
             LevelDto createdLevel = levelService.createLevel(levelDto);
             return new ResponseEntity<>(createdLevel, HttpStatus.CREATED);
