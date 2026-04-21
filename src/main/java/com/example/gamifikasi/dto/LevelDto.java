@@ -14,6 +14,6 @@ public class LevelDto {
     @NotBlank(message = "nameLevel is required")
     private String nameLevel;
 
-    @NotBlank(message = "description is required")
+    @NotBlank(message = "description is required ")
     private String description;
 }
