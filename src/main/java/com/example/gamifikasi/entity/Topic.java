@@ -15,9 +15,8 @@ public class Topic {
     private Long id;
     @Column( name = "NAME_TOPIC")
     private String nameTopic;
-    @ManyToOne
-    @JoinColumn(name = "LEVEL_ID", referencedColumnName = "ID")
-    private Level levelId;
+    @Column( name = "DESCRIPTION")
+    private String description;
     @Column(name="ICON")
     private String icon;
 }
