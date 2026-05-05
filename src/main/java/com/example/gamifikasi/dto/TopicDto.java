@@ -1,15 +1,14 @@
 package com.example.gamifikasi.dto;
 
-import lombok.Data;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class TopicDto {
     private Long id;
     private String nameTopic;
-    private Long levelId;
+    private String description;
     private String icon;
 }

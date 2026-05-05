@@ -1,12 +1,13 @@
 package com.example.gamifikasi.controller;
 
 import com.example.gamifikasi.dto.TopicDto;
-import com.example.gamifikasi.dto.TopicCreateDto;
 import com.example.gamifikasi.service.TopicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,10 +21,14 @@ public class TopicController {
     private TopicService topicService;
 
     // Create Topic
-    @PostMapping
-    public ResponseEntity<TopicDto> createTopic(@RequestBody TopicCreateDto createDto) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TopicDto> createTopic(
+            @RequestParam("nameTopic") String nameTopic,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestPart(value = "icon", required = false) MultipartFile iconFile) {
         try {
-            TopicDto createdTopic = topicService.createTopic(createDto);
+            TopicDto createDto = new TopicDto(null, nameTopic, description, null);
+            TopicDto createdTopic = topicService.createTopic(createDto, iconFile);
             return new ResponseEntity<>(createdTopic, HttpStatus.CREATED);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -74,25 +79,15 @@ public class TopicController {
         }
     }
 
-    // Get Topics by Level ID
-    @GetMapping("/level/{levelId}")
-    public ResponseEntity<List<TopicDto>> getTopicsByLevelId(@PathVariable("levelId") Long levelId) {
-        try {
-            List<TopicDto> topics = topicService.getTopicsByLevelId(levelId);
-            if (topics.isEmpty()) {
-                return ResponseEntity.noContent().build();
-            }
-            return new ResponseEntity<>(topics, HttpStatus.OK);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
     // Update Topic
-    @PutMapping("/{id}")
-    public ResponseEntity<TopicDto> updateTopic(@PathVariable("id") Long id, @RequestBody TopicDto topicDto) {
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TopicDto> updateTopic(
+            @PathVariable("id") Long id,
+            @RequestParam("nameTopic") String nameTopic,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestPart(value = "icon", required = false) MultipartFile iconFile) {
         try {
-            Optional<TopicDto> updatedTopic = topicService.updateTopic(id, topicDto);
+            Optional<TopicDto> updatedTopic = topicService.updateTopic(id, nameTopic, description, iconFile);
             if (updatedTopic.isPresent()) {
                 return new ResponseEntity<>(updatedTopic.get(), HttpStatus.OK);
             } else {
