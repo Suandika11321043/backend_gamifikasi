@@ -2,7 +2,11 @@ package com.example.gamifikasi.service;
 
 import com.example.gamifikasi.dto.StudentDto;
 import com.example.gamifikasi.entity.Student;
+import com.example.gamifikasi.entity.StudentRank;
+import com.example.gamifikasi.repository.StudentAnswerRepository;
+import com.example.gamifikasi.repository.StudentRankRepository;
 import com.example.gamifikasi.repository.StudentRepository;
+import com.example.gamifikasi.repository.StudentScoreRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,14 +26,36 @@ public class StudentService {
     @Autowired
     private FileStorageUtil fileStorageUtil;
 
+    @Autowired
+    private StudentAnswerRepository studentAnswerRepository;
+
+    @Autowired
+    private StudentScoreRepository studentScoreRepository;
+
+    @Autowired
+    private StudentRankRepository studentRankRepository;
+
     private StudentDto convertToDto(Student student) {
         StudentDto dto = new StudentDto();
         dto.setId(student.getId());
         dto.setName(student.getName());
         dto.setGroup(student.getGroup());
         dto.setAvatar(student.getAvatar());
-        dto.setTotalPoints(student.getTotalPoints());
-        dto.setLevel(student.getLevel());
+
+        // Total earned score dari semua jawaban
+        dto.setTotalEarnedScore(studentAnswerRepository.sumEarnedScoreByStudent(student));
+
+        // Total bintang dan rank dari student_rank
+        Optional<StudentRank> rankOpt = studentRankRepository.findByStudent(student);
+        if (rankOpt.isPresent()) {
+            StudentRank rank = rankOpt.get();
+            dto.setTotalStars(rank.getTotalStars() != null ? rank.getTotalStars() : 0);
+            dto.setRankName(rank.getRankName() != null ? rank.getRankName().name() : null);
+        } else {
+            dto.setTotalStars(studentScoreRepository.sumStarsByStudent(student));
+            dto.setRankName(null);
+        }
+
         return dto;
     }
 
@@ -38,8 +64,6 @@ public class StudentService {
         Student student = new Student();
         student.setName(studentDto.getName());
         student.setGroup(studentDto.getGroup());
-        student.setTotalPoints(studentDto.getTotalPoints());
-        student.setLevel(studentDto.getLevel());
 
         if (avatarFile != null && !avatarFile.isEmpty()) {
             String filename = fileStorageUtil.storeFile(avatarFile);
@@ -87,9 +111,6 @@ public class StudentService {
         Student existing = existingOpt.get();
         existing.setName(studentDto.getName());
         existing.setGroup(studentDto.getGroup());
-        existing.setTotalPoints(studentDto.getTotalPoints());
-        existing.setLevel(studentDto.getLevel());
-
         if (avatarFile != null && !avatarFile.isEmpty()) {
             fileStorageUtil.deleteFile(existing.getAvatar());
             String filename = fileStorageUtil.storeFile(avatarFile);

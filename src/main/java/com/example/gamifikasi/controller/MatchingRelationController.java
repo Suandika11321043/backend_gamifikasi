@@ -21,12 +21,10 @@ public class MatchingRelationController {
     // Create Relation
     @PostMapping
     public ResponseEntity<MatchingRelationDto> createRelation(
-            @RequestParam("questionId") Long questionId,
-            @RequestParam("opsiPertanyaanId") Long opsiPertanyaanId,
-            @RequestParam("opsiJawabanId") Long opsiJawabanId) {
+            @RequestBody MatchingRelationDto dto) {
         try {
             MatchingRelationDto created = matchingRelationService.createRelation(
-                    questionId, opsiPertanyaanId, opsiJawabanId);
+                    dto.getQuestionId(), dto.getOpsiPertanyaanId(), dto.getOpsiJawabanId());
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -73,12 +71,10 @@ public class MatchingRelationController {
     @PutMapping("/{id}")
     public ResponseEntity<MatchingRelationDto> updateRelation(
             @PathVariable("id") Long id,
-            @RequestParam("questionId") Long questionId,
-            @RequestParam("opsiPertanyaanId") Long opsiPertanyaanId,
-            @RequestParam("opsiJawabanId") Long opsiJawabanId) {
+            @RequestBody MatchingRelationDto dto) {
         try {
             Optional<MatchingRelationDto> updated = matchingRelationService.updateRelation(
-                    id, questionId, opsiPertanyaanId, opsiJawabanId);
+                    id, dto.getQuestionId(), dto.getOpsiPertanyaanId(), dto.getOpsiJawabanId());
             return updated.map(r -> new ResponseEntity<>(r, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {

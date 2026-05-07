@@ -25,9 +25,6 @@ public class Student {
     @Column(name = "AVATAR")
     private String avatar;
 
-    @Column(name = "TOTAL_POINTS")
-    private String totalPoints;
-
     @Column(name = "LEVEL")
     private String level;
 }

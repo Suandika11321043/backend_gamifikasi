@@ -23,11 +23,11 @@ public class StudentController {
     public ResponseEntity<StudentDto> createStudent(
             @RequestParam("name") String name,
             @RequestParam("group") String group,
-            @RequestParam("totalPoints") String totalPoints,
-            @RequestParam("level") String level,
             @RequestPart(value = "avatar", required = false) MultipartFile avatarFile) {
         try {
-            StudentDto studentDto = new StudentDto(null, name, group, null, totalPoints, level);
+            StudentDto studentDto = new StudentDto();
+            studentDto.setName(name);
+            studentDto.setGroup(group);
             StudentDto created = studentService.createStudent(studentDto, avatarFile);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -98,11 +98,11 @@ public class StudentController {
             @PathVariable("id") Long id,
             @RequestParam("name") String name,
             @RequestParam("group") String group,
-            @RequestParam("totalPoints") String totalPoints,
-            @RequestParam("level") String level,
             @RequestPart(value = "avatar", required = false) MultipartFile avatarFile) {
         try {
-            StudentDto studentDto = new StudentDto(null, name, group, null, totalPoints, level);
+            StudentDto studentDto = new StudentDto();
+            studentDto.setName(name);
+            studentDto.setGroup(group);
             Optional<StudentDto> updated = studentService.updateStudent(id, studentDto, avatarFile);
             if (updated.isPresent()) {
                 return new ResponseEntity<>(updated.get(), HttpStatus.OK);
