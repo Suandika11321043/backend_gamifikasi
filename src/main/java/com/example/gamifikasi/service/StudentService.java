@@ -42,8 +42,8 @@ public class StudentService {
         dto.setGroup(student.getGroup());
         dto.setAvatar(student.getAvatar());
 
-        // Total earned score dari semua jawaban
-        dto.setTotalEarnedScore(studentAnswerRepository.sumEarnedScoreByStudent(student));
+        // Total earned score: jumlah skor tertinggi per topik
+        dto.setTotalEarnedScore(studentAnswerRepository.sumMaxEarnedScorePerTopicByStudentId(student.getId()));
 
         // Total bintang dan rank dari student_rank
         Optional<StudentRank> rankOpt = studentRankRepository.findByStudent(student);
@@ -102,7 +102,8 @@ public class StudentService {
     }
 
     // Update Student
-    public Optional<StudentDto> updateStudent(Long id, StudentDto studentDto, MultipartFile avatarFile) throws IOException {
+    public Optional<StudentDto> updateStudent(Long id, StudentDto studentDto, MultipartFile avatarFile)
+            throws IOException {
         Optional<Student> existingOpt = studentRepository.findById(id);
         if (existingOpt.isEmpty()) {
             return Optional.empty();
