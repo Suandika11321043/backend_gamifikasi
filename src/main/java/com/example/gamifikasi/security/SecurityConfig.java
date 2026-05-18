@@ -40,8 +40,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/register-admin", "/api/quiz/submit").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register-admin").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/students", "/api/students/**", "/api/topics", "/api/topics/**", "/api/quiz/**", "/api/uploads/**", "/api/matching-relations", "/api/matching-relations/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/submit", "/api/quiz/submit/answer", "/api/quiz/finish").permitAll()
                 .requestMatchers("/api/matching-relations", "/api/matching-relations/**").permitAll()
                 .anyRequest().authenticated()
             )

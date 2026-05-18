@@ -15,7 +15,9 @@ import java.util.List;
  *
  * Endpoints:
  *  GET  /api/quiz/topics/{topicId}/questions          → ambil soal-soal satu topik
- *  POST /api/quiz/submit                              → siswa submit jawaban kuis
+ *  POST /api/quiz/submit/answer                       → submit satu jawaban (mode satu-per-satu)
+ *  POST /api/quiz/finish                              → selesaikan kuis & hitung bintang
+ *  POST /api/quiz/submit                              → (legacy) submit semua jawaban sekaligus
  *  GET  /api/quiz/scores/students/{studentId}         → semua skor siswa
  *  GET  /api/quiz/scores/students/{studentId}/topics/{topicId} → skor per topik
  *  GET  /api/quiz/ranks                               → leaderboard semua rank
@@ -36,7 +38,29 @@ public class QuizController {
         return ResponseEntity.ok(quizService.getQuestionsByTopic(topicId));
     }
 
-    // ─── Submit jawaban ──────────────────────────────────────────
+    // ─── Submit satu jawaban (mode soal satu-per-satu) ──────────
+
+    /**
+     * Submit jawaban untuk satu soal. Kembalikan hasil langsung (benar/salah).
+     * Panggil untuk setiap soal secara berurutan.
+     */
+    @PostMapping("/submit/answer")
+    public ResponseEntity<SingleAnswerResponse> submitSingleAnswer(
+            @RequestBody SingleAnswerRequest request) {
+        return ResponseEntity.ok(quizService.submitSingleAnswer(request));
+    }
+
+    /**
+     * Dipanggil setelah semua soal selesai dijawab satu-per-satu.
+     * Hitung bintang, update StudentScore & StudentRank, kembalikan hasil akhir.
+     */
+    @PostMapping("/finish")
+    public ResponseEntity<QuizResultResponse> finishQuiz(
+            @RequestBody QuizFinishRequest request) {
+        return ResponseEntity.ok(quizService.finishQuiz(request));
+    }
+
+    // ─── Submit semua jawaban sekaligus (legacy) ─────────────────
 
     @PostMapping("/submit")
     public ResponseEntity<QuizResultResponse> submitQuiz(

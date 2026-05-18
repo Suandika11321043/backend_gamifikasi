@@ -76,7 +76,81 @@ public class QuizService {
     }
 
     // ────────────────────────────────────────────────────────────
-    //  SUBMIT: siswa mengumpulkan jawaban kuis
+    //  SUBMIT SATU SOAL: mode soal satu-per-satu
+    // ────────────────────────────────────────────────────────────
+
+    @Transactional
+    public SingleAnswerResponse submitSingleAnswer(SingleAnswerRequest request) {
+
+        Student student = studentRepository.findById(request.getStudentId())
+                .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan: " + request.getStudentId()));
+
+        AnswerRequest answerReq = request.getAnswer();
+        Questions question = questionsRepository.findById(answerReq.getQuestionId())
+                .orElseThrow(() -> new RuntimeException("Soal tidak ditemukan: " + answerReq.getQuestionId()));
+
+        boolean isCorrect = gradeAnswer(question, answerReq);
+        int earnedScore = isCorrect ? 100 : 0;
+
+        StudentAnswer studentAnswer = new StudentAnswer();
+        studentAnswer.setStudent(student);
+        studentAnswer.setQuestions(question);
+        studentAnswer.setIsCorrect(isCorrect);
+        studentAnswer.setEarnedScore(earnedScore);
+        try {
+            studentAnswer.setStudentAnswer(MAPPER.writeValueAsString(answerReq));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            studentAnswer.setStudentAnswer(answerReq.toString());
+        }
+        studentAnswerRepository.save(studentAnswer);
+
+        return new SingleAnswerResponse(question.getId(), isCorrect, earnedScore);
+    }
+
+    // ────────────────────────────────────────────────────────────
+    //  FINISH KUIS: hitung bintang & update rank setelah semua soal dijawab
+    // ────────────────────────────────────────────────────────────
+
+    @Transactional
+    public QuizResultResponse finishQuiz(QuizFinishRequest request) {
+
+        Student student = studentRepository.findById(request.getStudentId())
+                .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan: " + request.getStudentId()));
+
+        Topic topic = topicRepository.findById(request.getTopicId())
+                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + request.getTopicId()));
+
+        int correctCount = request.getCorrectCount();
+        int totalQuestions = request.getTotalQuestions();
+        int newStars = calculateStars(correctCount, totalQuestions);
+
+        StudentScore score = studentScoreRepository
+                .findByStudentAndTopic(student, topic)
+                .orElse(new StudentScore());
+
+        boolean improved = score.getStarCount() == null || newStars > score.getStarCount();
+        if (improved) {
+            score.setStudent(student);
+            score.setTopic(topic);
+            score.setCorrectCount(correctCount);
+            score.setStarCount(newStars);
+            studentScoreRepository.save(score);
+        }
+
+        StudentRank rank = updateStudentRank(student);
+
+        return new QuizResultResponse(
+                correctCount,
+                totalQuestions,
+                newStars,
+                improved,
+                rank.getTotalStars(),
+                rank.getRankName(),
+                null);
+    }
+
+    // ────────────────────────────────────────────────────────────
+    //  SUBMIT: siswa mengumpulkan jawaban kuis (semua sekaligus – legacy)
     // ────────────────────────────────────────────────────────────
 
     @Transactional
