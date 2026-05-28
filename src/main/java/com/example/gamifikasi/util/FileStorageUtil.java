@@ -17,22 +17,49 @@ public class FileStorageUtil {
 
     /**
      * Upload file ke Cloudinary, simpan di folder "avatars".
+     * 
      * @return secure URL dari Cloudinary
      */
     public String storeFile(MultipartFile file) throws IOException {
+        return storeFile(file, "avatars");
+    }
+
+    /**
+     * Upload file ke Cloudinary di folder yang ditentukan.
+     * 
+     * @param folder nama folder Cloudinary (contoh: "avatars", "jigsaw")
+     * @return secure URL dari Cloudinary
+     */
+    public String storeFile(MultipartFile file, String folder) throws IOException {
         Map<?, ?> uploadResult = cloudinary.uploader().upload(
                 file.getBytes(),
-                ObjectUtils.asMap("folder", "avatars")
-        );
+                ObjectUtils.asMap("folder", folder));
+        return uploadResult.get("secure_url").toString();
+    }
+
+    /**
+     * Upload raw bytes ke Cloudinary di folder yang ditentukan.
+     * Digunakan untuk mengunggah keping gambar hasil crop.
+     *
+     * @param bytes  data gambar dalam bentuk byte array
+     * @param folder nama folder Cloudinary (contoh: "jigsaw/pieces")
+     * @return secure URL dari Cloudinary
+     */
+    public String storeBytes(byte[] bytes, String folder) throws IOException {
+        Map<?, ?> uploadResult = cloudinary.uploader().upload(
+                bytes,
+                ObjectUtils.asMap("folder", folder));
         return uploadResult.get("secure_url").toString();
     }
 
     /**
      * Hapus file dari Cloudinary berdasarkan URL yang tersimpan.
+     * 
      * @param url secure_url yang tersimpan di database
      */
     public void deleteFile(String url) throws IOException {
-        if (url == null || url.isEmpty()) return;
+        if (url == null || url.isEmpty())
+            return;
 
         String publicId = extractPublicId(url);
         if (!publicId.isEmpty()) {
@@ -42,12 +69,14 @@ public class FileStorageUtil {
 
     /**
      * Ekstrak public_id dari Cloudinary URL.
-     * Contoh URL: https://res.cloudinary.com/dsdqxorzw/image/upload/v123/avatars/abc.jpg
+     * Contoh URL:
+     * https://res.cloudinary.com/dsdqxorzw/image/upload/v123/avatars/abc.jpg
      * Public ID: avatars/abc
      */
     private String extractPublicId(String url) {
         int uploadIndex = url.indexOf("/upload/");
-        if (uploadIndex == -1) return "";
+        if (uploadIndex == -1)
+            return "";
 
         String afterUpload = url.substring(uploadIndex + 8);
 
@@ -65,4 +94,3 @@ public class FileStorageUtil {
         return afterUpload;
     }
 }
-

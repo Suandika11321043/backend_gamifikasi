@@ -27,9 +27,12 @@ public class QuestionsController {
             @RequestParam("questionType") String questionType,
             @RequestParam(value = "contentInstruction", required = false) String contentInstruction,
             @RequestPart(value = "contentImage", required = false) MultipartFile imageFile,
-            @RequestPart(value = "contentAudio", required = false) MultipartFile audioFile) {
+            @RequestPart(value = "contentAudio", required = false) MultipartFile audioFile,
+            @RequestParam(value = "timeLimitMinutes", required = false) Integer timeLimitMinutes,
+            @RequestParam(value = "scorePoint", required = false) Integer scorePoint) {
         try {
-            QuestionsDto created = questionsService.createQuestion(topicId, questionType, contentInstruction, imageFile, audioFile);
+            QuestionsDto created = questionsService.createQuestion(topicId, questionType, contentInstruction, imageFile,
+                    audioFile, timeLimitMinutes, scorePoint);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -41,7 +44,8 @@ public class QuestionsController {
     public ResponseEntity<List<QuestionsDto>> getAllQuestions() {
         try {
             List<QuestionsDto> list = questionsService.getAllQuestions();
-            if (list.isEmpty()) return ResponseEntity.noContent().build();
+            if (list.isEmpty())
+                return ResponseEntity.noContent().build();
             return new ResponseEntity<>(list, HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -65,7 +69,8 @@ public class QuestionsController {
     public ResponseEntity<List<QuestionsDto>> getQuestionsByTopicId(@PathVariable("topicId") Long topicId) {
         try {
             List<QuestionsDto> list = questionsService.getQuestionsByTopicId(topicId);
-            if (list.isEmpty()) return ResponseEntity.noContent().build();
+            if (list.isEmpty())
+                return ResponseEntity.noContent().build();
             return new ResponseEntity<>(list, HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -80,9 +85,29 @@ public class QuestionsController {
             @RequestParam("questionType") String questionType,
             @RequestParam(value = "contentInstruction", required = false) String contentInstruction,
             @RequestPart(value = "contentImage", required = false) MultipartFile imageFile,
-            @RequestPart(value = "contentAudio", required = false) MultipartFile audioFile) {
+            @RequestPart(value = "contentAudio", required = false) MultipartFile audioFile,
+            @RequestParam(value = "timeLimitMinutes", required = false) Integer timeLimitMinutes,
+            @RequestParam(value = "scorePoint", required = false) Integer scorePoint) {
         try {
-            Optional<QuestionsDto> updated = questionsService.updateQuestion(id, topicId, questionType, contentInstruction, imageFile, audioFile);
+            Optional<QuestionsDto> updated = questionsService.updateQuestion(id, topicId, questionType,
+                    contentInstruction, imageFile, audioFile, timeLimitMinutes, scorePoint);
+            return updated.map(q -> new ResponseEntity<>(q, HttpStatus.OK))
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // Update timer only (PATCH /api/questions/{id}/timer)
+    // Kirim { "timeLimitMinutes": 5 } untuk set timer, atau { "timeLimitMinutes":
+    // null } untuk hapus timer
+    @PatchMapping("/{id}/timer")
+    public ResponseEntity<QuestionsDto> updateTimerLimit(
+            @PathVariable("id") Long id,
+            @RequestBody java.util.Map<String, Integer> body) {
+        try {
+            Integer timeLimitMinutes = body.get("timeLimitMinutes");
+            Optional<QuestionsDto> updated = questionsService.updateTimerLimit(id, timeLimitMinutes);
             return updated.map(q -> new ResponseEntity<>(q, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {

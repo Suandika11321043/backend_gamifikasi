@@ -7,7 +7,8 @@ import lombok.Setter;
 
 /**
  * Request untuk mengakhiri sesi kuis setelah semua soal dijawab satu-per-satu.
- * Client mengirimkan jumlah jawaban benar yang telah dikumpulkan dari tiap SingleAnswerResponse.
+ * Client mengirimkan jumlah jawaban benar yang telah dikumpulkan dari tiap
+ * SingleAnswerResponse.
  */
 @Getter
 @Setter
@@ -17,6 +18,9 @@ public class QuizFinishRequest {
 
     private Long studentId;
     private Long topicId;
-    private int correctCount;
-    private int totalQuestions;
+    private Integer correctCount;
+    private Integer totalQuestions;
+
+    /** Total poin yang dikumpulkan dari semua SingleAnswerResponse.earnedScore. */
+    private Integer totalEarnedScore;
 }

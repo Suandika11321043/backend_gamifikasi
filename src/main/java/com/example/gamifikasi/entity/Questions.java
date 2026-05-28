@@ -29,4 +29,10 @@ public class Questions {
 
     @Column(name = "content_audio")
     private String contentAudio;
+
+    @Column(name = "time_limit_minutes")
+    private Integer timeLimitMinutes;
+
+    @Column(name = "score_point")
+    private Integer scorePoint;
 }
