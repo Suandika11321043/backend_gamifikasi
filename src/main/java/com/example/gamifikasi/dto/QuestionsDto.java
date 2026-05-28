@@ -16,4 +16,6 @@ public class QuestionsDto {
     private String contentInstruction;
     private String contentImage;
     private String contentAudio;
+    private Integer timeLimitMinutes;
+    private Integer scorePoint;
 }

@@ -1,18 +1,14 @@
 package com.example.gamifikasi.entity;
 
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(
-        name = "student_score",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"id_user", "id_topik"})
-)
+@Table(name = "student_score", uniqueConstraints = @UniqueConstraint(columnNames = { "id_user", "id_topik" }))
 @Getter
 @Setter
-public class StudentScore{
+public class StudentScore {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_skor")
@@ -31,4 +27,7 @@ public class StudentScore{
 
     @Column(name = "star_count", columnDefinition = "INT DEFAULT 0")
     private Integer starCount;
+
+    @Column(name = "total_earned_score", columnDefinition = "INT DEFAULT 0")
+    private Integer totalEarnedScore;
 }

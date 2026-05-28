@@ -9,7 +9,8 @@ import java.util.List;
 
 /**
  * Soal beserta opsi-opsinya yang dikirim ke siswa.
- * Kunci jawaban (kunciJawaban, urutanBenar) TIDAK disertakan agar tidak bocor ke client.
+ * Kunci jawaban (kunciJawaban, urutanBenar) TIDAK disertakan agar tidak bocor
+ * ke client.
  */
 @Getter
 @Setter
@@ -22,6 +23,10 @@ public class QuestionWithOptionsDto {
     private String contentInstruction;
     private String contentImage;
     private String contentAudio;
+    private Integer timeLimitMinutes;
+
+    /** Poin yang diperoleh jika menjawab soal ini dengan benar. */
+    private Integer scorePoint;
 
     /** Semua opsi soal ini (tanpa kunci jawaban). */
     private List<OptionDto> options;

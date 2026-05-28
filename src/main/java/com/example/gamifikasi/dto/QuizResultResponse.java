@@ -32,6 +32,9 @@ public class QuizResultResponse {
     /** Rank siswa setelah submit ini. */
     private RankLevel rankName;
 
+    /** Total poin yang diperoleh pada sesi kuis ini. */
+    private int totalEarnedScore;
+
     /** Detail benar/salah per soal. */
     private List<AnswerResultDto> answerDetails;
 }

@@ -3,7 +3,10 @@ package com.example.gamifikasi.service;
 import com.example.gamifikasi.dto.QuestionsDto;
 import com.example.gamifikasi.entity.Questions;
 import com.example.gamifikasi.entity.Topic;
+import com.example.gamifikasi.repository.MatchingRelationRepository;
+import com.example.gamifikasi.repository.QuestionOptionsRepository;
 import com.example.gamifikasi.repository.QuestionsRepository;
+import com.example.gamifikasi.repository.StudentAnswerRepository;
 import com.example.gamifikasi.repository.TopicRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,15 @@ public class QuestionsService {
     @Autowired
     private FileStorageUtil fileStorageUtil;
 
+    @Autowired
+    private StudentAnswerRepository studentAnswerRepository;
+
+    @Autowired
+    private QuestionOptionsRepository questionOptionsRepository;
+
+    @Autowired
+    private MatchingRelationRepository matchingRelationRepository;
+
     private QuestionsDto convertToDto(Questions q) {
         return new QuestionsDto(
                 q.getId(),
@@ -34,13 +46,15 @@ public class QuestionsService {
                 q.getQuestionType(),
                 q.getContentInstruction(),
                 q.getContentImage(),
-                q.getContentAudio()
-        );
+                q.getContentAudio(),
+                q.getTimeLimitMinutes(),
+                q.getScorePoint());
     }
 
     // Create
     public QuestionsDto createQuestion(Long topicId, String questionType, String contentInstruction,
-                                       MultipartFile imageFile, MultipartFile audioFile) throws IOException {
+            MultipartFile imageFile, MultipartFile audioFile,
+            Integer timeLimitMinutes, Integer scorePoint) throws IOException {
         Questions q = new Questions();
         if (topicId != null) {
             Topic topic = topicRepository.findById(topicId).orElse(null);
@@ -48,6 +62,8 @@ public class QuestionsService {
         }
         q.setQuestionType(questionType);
         q.setContentInstruction(contentInstruction);
+        q.setTimeLimitMinutes(timeLimitMinutes);
+        q.setScorePoint(scorePoint);
         if (imageFile != null && !imageFile.isEmpty()) {
             q.setContentImage(fileStorageUtil.storeFile(imageFile));
         }
@@ -80,10 +96,12 @@ public class QuestionsService {
 
     // Update
     public Optional<QuestionsDto> updateQuestion(Long id, Long topicId, String questionType,
-                                                  String contentInstruction,
-                                                  MultipartFile imageFile, MultipartFile audioFile) throws IOException {
+            String contentInstruction,
+            MultipartFile imageFile, MultipartFile audioFile,
+            Integer timeLimitMinutes, Integer scorePoint) throws IOException {
         Optional<Questions> existingOpt = questionsRepository.findById(id);
-        if (existingOpt.isEmpty()) return Optional.empty();
+        if (existingOpt.isEmpty())
+            return Optional.empty();
 
         Questions q = existingOpt.get();
         if (topicId != null) {
@@ -92,6 +110,8 @@ public class QuestionsService {
         }
         q.setQuestionType(questionType);
         q.setContentInstruction(contentInstruction);
+        q.setTimeLimitMinutes(timeLimitMinutes);
+        q.setScorePoint(scorePoint);
         if (imageFile != null && !imageFile.isEmpty()) {
             fileStorageUtil.deleteFile(q.getContentImage());
             q.setContentImage(fileStorageUtil.storeFile(imageFile));
@@ -101,6 +121,15 @@ public class QuestionsService {
             q.setContentAudio(fileStorageUtil.storeFile(audioFile));
         }
         return Optional.of(convertToDto(questionsRepository.save(q)));
+    }
+
+    // Update timer only
+    public Optional<QuestionsDto> updateTimerLimit(Long id, Integer timeLimitMinutes) {
+        return questionsRepository.findById(id)
+                .map(q -> {
+                    q.setTimeLimitMinutes(timeLimitMinutes);
+                    return convertToDto(questionsRepository.save(q));
+                });
     }
 
     // Delete
@@ -113,6 +142,10 @@ public class QuestionsService {
                     } catch (IOException e) {
                         // continue deletion
                     }
+                    // Hapus relasi anak sebelum menghapus soal
+                    matchingRelationRepository.deleteAll(matchingRelationRepository.findByQuestions(q));
+                    studentAnswerRepository.deleteAll(studentAnswerRepository.findByQuestions(q));
+                    questionOptionsRepository.deleteAll(questionOptionsRepository.findByQuestions(q));
                     questionsRepository.deleteById(id);
                     return true;
                 })

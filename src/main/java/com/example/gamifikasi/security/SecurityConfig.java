@@ -28,7 +28,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService,
-                          JwtAuthenticationFilter jwtAuthenticationFilter) {
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -36,18 +36,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/register-admin").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/students", "/api/students/**", "/api/topics", "/api/topics/**", "/api/quiz/**", "/api/uploads/**", "/api/matching-relations", "/api/matching-relations/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/submit", "/api/quiz/submit/answer", "/api/quiz/finish").permitAll()
-                .requestMatchers("/api/matching-relations", "/api/matching-relations/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/login", "/api/auth/register-admin").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/students", "/api/students/**",
+                                "/api/topics", "/api/topics/**", "/api/quiz/**", "/api/uploads/**",
+                                "/api/matching-relations", "/api/matching-relations/**", "/api/jigsaw/puzzles/**",
+                                "/api/jigsaw/questions/**")
+                        .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/submit",
+                                "/api/quiz/submit/answer", "/api/quiz/finish", "/api/jigsaw/submit",
+                                "/api/jigsaw/progress")
+                        .permitAll()
+                        .requestMatchers("/api/matching-relations", "/api/matching-relations/**").permitAll()
+                        .anyRequest().authenticated())
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -44,7 +44,7 @@ public class QuizService {
     private StudentRankRepository studentRankRepository;
 
     // ────────────────────────────────────────────────────────────
-    //  GET: ambil semua soal beserta opsi untuk satu topik
+    // GET: ambil semua soal beserta opsi untuk satu topik
     // ────────────────────────────────────────────────────────────
 
     public List<QuestionWithOptionsDto> getQuestionsByTopic(Long topicId) {
@@ -57,14 +57,13 @@ public class QuizService {
     }
 
     private QuestionWithOptionsDto toQuestionWithOptionsDto(Questions q) {
-        List<QuestionWithOptionsDto.OptionDto> options =
-                questionOptionsRepository.findByQuestions(q).stream()
-                        .map(o -> new QuestionWithOptionsDto.OptionDto(
-                                o.getId(),
-                                o.getTeksOpsi(),
-                                o.getMediaOpsi(),
-                                o.getTipeItem() != null ? o.getTipeItem().name() : null))
-                        .collect(Collectors.toList());
+        List<QuestionWithOptionsDto.OptionDto> options = questionOptionsRepository.findByQuestions(q).stream()
+                .map(o -> new QuestionWithOptionsDto.OptionDto(
+                        o.getId(),
+                        o.getTeksOpsi(),
+                        o.getMediaOpsi(),
+                        o.getTipeItem() != null ? o.getTipeItem().name() : null))
+                .collect(Collectors.toList());
 
         return new QuestionWithOptionsDto(
                 q.getId(),
@@ -72,11 +71,13 @@ public class QuizService {
                 q.getContentInstruction(),
                 q.getContentImage(),
                 q.getContentAudio(),
+                q.getTimeLimitMinutes(),
+                q.getScorePoint(),
                 options);
     }
 
     // ────────────────────────────────────────────────────────────
-    //  SUBMIT SATU SOAL: mode soal satu-per-satu
+    // SUBMIT SATU SOAL: mode soal satu-per-satu
     // ────────────────────────────────────────────────────────────
 
     @Transactional
@@ -90,7 +91,8 @@ public class QuizService {
                 .orElseThrow(() -> new RuntimeException("Soal tidak ditemukan: " + answerReq.getQuestionId()));
 
         boolean isCorrect = gradeAnswer(question, answerReq);
-        int earnedScore = isCorrect ? 100 : 0;
+        int baseScore = question.getScorePoint() != null ? question.getScorePoint() : 100;
+        int earnedScore = isCorrect ? baseScore : 0;
 
         StudentAnswer studentAnswer = new StudentAnswer();
         studentAnswer.setStudent(student);
@@ -108,7 +110,7 @@ public class QuizService {
     }
 
     // ────────────────────────────────────────────────────────────
-    //  FINISH KUIS: hitung bintang & update rank setelah semua soal dijawab
+    // FINISH KUIS: hitung bintang & update rank setelah semua soal dijawab
     // ────────────────────────────────────────────────────────────
 
     @Transactional
@@ -120,22 +122,31 @@ public class QuizService {
         Topic topic = topicRepository.findById(request.getTopicId())
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + request.getTopicId()));
 
-        int correctCount = request.getCorrectCount();
-        int totalQuestions = request.getTotalQuestions();
+        int correctCount = request.getCorrectCount() != null ? request.getCorrectCount() : 0;
+        int totalQuestions = request.getTotalQuestions() != null ? request.getTotalQuestions() : 0;
         int newStars = calculateStars(correctCount, totalQuestions);
+
+        // Hitung total score sesi ini dari StudentAnswer (server-side, tidak bergantung
+        // frontend)
+        int sessionEarnedScore = studentAnswerRepository
+                .sumLatestEarnedScoreByStudentIdAndTopicId(student.getId(), topic.getId());
 
         StudentScore score = studentScoreRepository
                 .findByStudentAndTopic(student, topic)
                 .orElse(new StudentScore());
 
         boolean improved = score.getStarCount() == null || newStars > score.getStarCount();
+        int currentBestScore = score.getTotalEarnedScore() != null ? score.getTotalEarnedScore() : 0;
+        int bestEarnedScore = Math.max(currentBestScore, sessionEarnedScore);
+
+        score.setStudent(student);
+        score.setTopic(topic);
+        score.setTotalEarnedScore(bestEarnedScore);
         if (improved) {
-            score.setStudent(student);
-            score.setTopic(topic);
             score.setCorrectCount(correctCount);
             score.setStarCount(newStars);
-            studentScoreRepository.save(score);
         }
+        studentScoreRepository.save(score);
 
         StudentRank rank = updateStudentRank(student);
 
@@ -146,11 +157,12 @@ public class QuizService {
                 improved,
                 rank.getTotalStars(),
                 rank.getRankName(),
+                sessionEarnedScore,
                 null);
     }
 
     // ────────────────────────────────────────────────────────────
-    //  SUBMIT: siswa mengumpulkan jawaban kuis (semua sekaligus – legacy)
+    // SUBMIT: siswa mengumpulkan jawaban kuis (semua sekaligus – legacy)
     // ────────────────────────────────────────────────────────────
 
     @Transactional
@@ -166,6 +178,7 @@ public class QuizService {
         int totalQuestions = topicQuestions.size();
 
         int correctCount = 0;
+        int totalEarnedScore = 0;
         List<AnswerResultDto> details = new ArrayList<>();
 
         for (AnswerRequest answerReq : request.getAnswers()) {
@@ -174,8 +187,11 @@ public class QuizService {
                     .orElseThrow(() -> new RuntimeException("Soal tidak ditemukan: " + answerReq.getQuestionId()));
 
             boolean isCorrect = gradeAnswer(question, answerReq);
-            int earnedScore = isCorrect ? 100 : 0;
-            if (isCorrect) correctCount++;
+            int baseScore = question.getScorePoint() != null ? question.getScorePoint() : 100;
+            int earnedScore = isCorrect ? baseScore : 0;
+            if (isCorrect)
+                correctCount++;
+            ;
 
             // Simpan jawaban siswa
             StudentAnswer studentAnswer = new StudentAnswer();
@@ -190,6 +206,7 @@ public class QuizService {
             }
             studentAnswerRepository.save(studentAnswer);
 
+            totalEarnedScore += earnedScore;
             details.add(new AnswerResultDto(answerReq.getQuestionId(), isCorrect, earnedScore));
         }
 
@@ -201,13 +218,17 @@ public class QuizService {
                 .orElse(new StudentScore());
 
         boolean improved = score.getStarCount() == null || newStars > score.getStarCount();
+        int currentBestScore = score.getTotalEarnedScore() != null ? score.getTotalEarnedScore() : 0;
+        int bestEarnedScore = Math.max(currentBestScore, totalEarnedScore);
+
+        score.setStudent(student);
+        score.setTopic(topic);
+        score.setTotalEarnedScore(bestEarnedScore);
         if (improved) {
-            score.setStudent(student);
-            score.setTopic(topic);
             score.setCorrectCount(correctCount);
             score.setStarCount(newStars);
-            studentScoreRepository.save(score);
         }
+        studentScoreRepository.save(score);
 
         // Update StudentRank
         StudentRank rank = updateStudentRank(student);
@@ -219,11 +240,12 @@ public class QuizService {
                 improved,
                 rank.getTotalStars(),
                 rank.getRankName(),
+                totalEarnedScore,
                 details);
     }
 
     // ────────────────────────────────────────────────────────────
-    //  DEBUG: dump isi DB untuk satu soal
+    // DEBUG: dump isi DB untuk satu soal
     // ────────────────────────────────────────────────────────────
 
     public java.util.Map<String, Object> debugQuestion(Long questionId) {
@@ -234,8 +256,7 @@ public class QuizService {
         result.put("questionId", q.getId());
         result.put("questionType", q.getQuestionType());
 
-        List<com.example.gamifikasi.entity.QuestionOptions> options =
-                questionOptionsRepository.findByQuestions(q);
+        List<com.example.gamifikasi.entity.QuestionOptions> options = questionOptionsRepository.findByQuestions(q);
 
         List<java.util.Map<String, Object>> optList = options.stream().map(o -> {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
@@ -261,7 +282,7 @@ public class QuizService {
     }
 
     // ────────────────────────────────────────────────────────────
-    //  CRUD: StudentScore
+    // CRUD: StudentScore
     // ────────────────────────────────────────────────────────────
 
     public List<StudentScore> getScoresByStudent(Long studentId) {
@@ -279,7 +300,7 @@ public class QuizService {
     }
 
     // ────────────────────────────────────────────────────────────
-    //  CRUD: StudentRank
+    // CRUD: StudentRank
     // ────────────────────────────────────────────────────────────
 
     public Optional<StudentRank> getRankByStudent(Long studentId) {
@@ -293,7 +314,7 @@ public class QuizService {
     }
 
     // ────────────────────────────────────────────────────────────
-    //  Helper: penilaian jawaban
+    // Helper: penilaian jawaban
     // ────────────────────────────────────────────────────────────
 
     private boolean gradeAnswer(Questions question, AnswerRequest answer) {
@@ -315,7 +336,8 @@ public class QuizService {
             case "DRAG_AND_DROP":
                 return gradeMatching(question, answer);
             default:
-                log.warn("[GRADE] questionId={} → tipe '{}' tidak dikenali!", question.getId(), question.getQuestionType());
+                log.warn("[GRADE] questionId={} → tipe '{}' tidak dikenali!", question.getId(),
+                        question.getQuestionType());
                 return false;
         }
     }
@@ -397,27 +419,32 @@ public class QuizService {
                     entry.getValue() == null ? new HashSet<>() : new HashSet<>(entry.getValue()));
         }
 
-        log.info("[MATCHING] questionId={} correctPairs={} submitted={}", question.getId(), correctPairs, submittedPairs);
+        log.info("[MATCHING] questionId={} correctPairs={} submitted={}", question.getId(), correctPairs,
+                submittedPairs);
         return submittedPairs.equals(correctPairs);
     }
 
     // ────────────────────────────────────────────────────────────
-    //  Helper: kalkulasi bintang dan update rank
+    // Helper: kalkulasi bintang dan update rank
     // ────────────────────────────────────────────────────────────
 
     /**
      * Hitung bintang berdasarkan persentase jawaban benar:
-     *  >= 80% → 3 bintang
-     *  >= 60% → 2 bintang
-     *  >= 40% → 1 bintang
-     *   < 40% → 0 bintang
+     * >= 80% → 3 bintang
+     * >= 60% → 2 bintang
+     * >= 40% → 1 bintang
+     * < 40% → 0 bintang
      */
     private int calculateStars(int correct, int total) {
-        if (total == 0) return 0;
+        if (total == 0)
+            return 0;
         double pct = (double) correct / total * 100.0;
-        if (pct >= 80) return 3;
-        if (pct >= 60) return 2;
-        if (pct >= 40) return 1;
+        if (pct >= 80)
+            return 3;
+        if (pct >= 60)
+            return 2;
+        if (pct >= 40)
+            return 1;
         return 0;
     }
 
