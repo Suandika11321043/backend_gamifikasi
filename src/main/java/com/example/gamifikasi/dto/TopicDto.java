@@ -11,4 +11,5 @@ public class TopicDto {
     private String nameTopic;
     private String description;
     private String icon;
+    private Boolean isActive;
 }

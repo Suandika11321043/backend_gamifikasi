@@ -46,6 +46,9 @@ public class SecurityConfig {
                                 "/api/matching-relations", "/api/matching-relations/**", "/api/jigsaw/puzzles/**",
                                 "/api/jigsaw/questions/**")
                         .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/topics/*/activate",
+                                "/api/topics/*/deactivate", "/api/questions/*/timer")
+                        .permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/submit",
                                 "/api/quiz/submit/answer", "/api/quiz/finish", "/api/jigsaw/submit",
                                 "/api/jigsaw/progress")
@@ -62,7 +65,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

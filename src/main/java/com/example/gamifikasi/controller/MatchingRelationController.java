@@ -26,8 +26,10 @@ public class MatchingRelationController {
             MatchingRelationDto created = matchingRelationService.createRelation(
                     dto.getQuestionId(), dto.getOpsiPertanyaanId(), dto.getOpsiJawabanId());
             return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -36,10 +38,13 @@ public class MatchingRelationController {
     public ResponseEntity<List<MatchingRelationDto>> getAllRelations() {
         try {
             List<MatchingRelationDto> list = matchingRelationService.getAllRelations();
-            if (list.isEmpty()) return ResponseEntity.noContent().build();
+            if (list.isEmpty())
+                return ResponseEntity.noContent().build();
             return new ResponseEntity<>(list, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -50,20 +55,26 @@ public class MatchingRelationController {
             Optional<MatchingRelationDto> data = matchingRelationService.getRelationById(id);
             return data.map(r -> new ResponseEntity<>(r, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
     // Get Relations by Question ID
     @GetMapping("/question/{questionId}")
-    public ResponseEntity<List<MatchingRelationDto>> getRelationsByQuestionId(@PathVariable("questionId") Long questionId) {
+    public ResponseEntity<List<MatchingRelationDto>> getRelationsByQuestionId(
+            @PathVariable("questionId") Long questionId) {
         try {
             List<MatchingRelationDto> list = matchingRelationService.getRelationsByQuestionId(questionId);
-            if (list.isEmpty()) return ResponseEntity.noContent().build();
+            if (list.isEmpty())
+                return ResponseEntity.noContent().build();
             return new ResponseEntity<>(list, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -77,8 +88,10 @@ public class MatchingRelationController {
                     id, dto.getQuestionId(), dto.getOpsiPertanyaanId(), dto.getOpsiJawabanId());
             return updated.map(r -> new ResponseEntity<>(r, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -90,8 +103,10 @@ public class MatchingRelationController {
             return deleted
                     ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
                     : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 }

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-
 @Entity
 @Setter
 @Getter
@@ -24,7 +23,4 @@ public class Student {
 
     @Column(name = "AVATAR")
     private String avatar;
-
-    @Column(name = "LEVEL")
-    private String level;
 }

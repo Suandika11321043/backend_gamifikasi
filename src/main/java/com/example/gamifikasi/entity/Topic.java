@@ -11,12 +11,15 @@ import lombok.Setter;
 public class Topic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column( name = "ID")
+    @Column(name = "ID")
     private Long id;
-    @Column( name = "NAME_TOPIC")
+    @Column(name = "NAME_TOPIC")
     private String nameTopic;
-    @Column( name = "DESCRIPTION")
+    @Column(name = "DESCRIPTION")
     private String description;
-    @Column(name="ICON")
+    @Column(name = "ICON")
     private String icon;
+
+    @Column(name = "IS_ACTIVE", nullable = false)
+    private Boolean isActive = true;
 }

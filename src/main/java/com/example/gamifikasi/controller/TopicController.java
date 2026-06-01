@@ -25,13 +25,17 @@ public class TopicController {
     public ResponseEntity<TopicDto> createTopic(
             @RequestParam("nameTopic") String nameTopic,
             @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "isActive", required = false) String isActiveStr,
             @RequestPart(value = "icon", required = false) MultipartFile iconFile) {
         try {
-            TopicDto createDto = new TopicDto(null, nameTopic, description, null);
+            boolean isActive = isActiveStr == null || Boolean.parseBoolean(isActiveStr.trim());
+            TopicDto createDto = new TopicDto(null, nameTopic, description, null, isActive);
             TopicDto createdTopic = topicService.createTopic(createDto, iconFile);
             return new ResponseEntity<>(createdTopic, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -44,8 +48,10 @@ public class TopicController {
                 return ResponseEntity.noContent().build();
             }
             return new ResponseEntity<>(topics, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -59,8 +65,10 @@ public class TopicController {
             } else {
                 return ResponseEntity.notFound().build();
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -74,8 +82,10 @@ public class TopicController {
             } else {
                 return ResponseEntity.notFound().build();
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -85,16 +95,64 @@ public class TopicController {
             @PathVariable("id") Long id,
             @RequestParam("nameTopic") String nameTopic,
             @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "isActive", required = false) String isActiveStr,
             @RequestPart(value = "icon", required = false) MultipartFile iconFile) {
         try {
-            Optional<TopicDto> updatedTopic = topicService.updateTopic(id, nameTopic, description, iconFile);
+            Boolean isActive = isActiveStr != null ? Boolean.parseBoolean(isActiveStr.trim()) : null;
+            Optional<TopicDto> updatedTopic = topicService.updateTopic(id, nameTopic, description, isActive, iconFile);
             if (updatedTopic.isPresent()) {
                 return new ResponseEntity<>(updatedTopic.get(), HttpStatus.OK);
             } else {
                 return ResponseEntity.notFound().build();
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
+        }
+    }
+
+    // Get active Topics only
+    @GetMapping("/active")
+    public ResponseEntity<List<TopicDto>> getActiveTopics() {
+        try {
+            List<TopicDto> topics = topicService.getActiveTopics();
+            if (topics.isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+            return new ResponseEntity<>(topics, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
+        }
+    }
+
+    // Activate Topic
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<TopicDto> activateTopic(@PathVariable("id") Long id) {
+        try {
+            return topicService.setActive(id, true)
+                    .map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
+        }
+    }
+
+    // Deactivate Topic
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<TopicDto> deactivateTopic(@PathVariable("id") Long id) {
+        try {
+            return topicService.setActive(id, false)
+                    .map(t -> new ResponseEntity<>(t, HttpStatus.OK))
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -108,8 +166,10 @@ public class TopicController {
             } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 }

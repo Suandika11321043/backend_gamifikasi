@@ -6,6 +6,7 @@ import com.example.gamifikasi.entity.Topic;
 import com.example.gamifikasi.repository.MatchingRelationRepository;
 import com.example.gamifikasi.repository.QuestionOptionsRepository;
 import com.example.gamifikasi.repository.QuestionsRepository;
+import com.example.gamifikasi.repository.JigsawPuzzleRepository;
 import com.example.gamifikasi.repository.StudentAnswerRepository;
 import com.example.gamifikasi.repository.TopicRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
@@ -38,6 +39,9 @@ public class QuestionsService {
 
     @Autowired
     private MatchingRelationRepository matchingRelationRepository;
+
+    @Autowired
+    private JigsawPuzzleRepository jigsawPuzzleRepository;
 
     private QuestionsDto convertToDto(Questions q) {
         return new QuestionsDto(
@@ -143,6 +147,7 @@ public class QuestionsService {
                         // continue deletion
                     }
                     // Hapus relasi anak sebelum menghapus soal
+                    jigsawPuzzleRepository.findByQuestion(q).ifPresent(jigsawPuzzleRepository::delete);
                     matchingRelationRepository.deleteAll(matchingRelationRepository.findByQuestions(q));
                     studentAnswerRepository.deleteAll(studentAnswerRepository.findByQuestions(q));
                     questionOptionsRepository.deleteAll(questionOptionsRepository.findByQuestions(q));

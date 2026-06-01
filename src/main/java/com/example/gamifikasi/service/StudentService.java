@@ -94,13 +94,6 @@ public class StudentService {
                 .collect(Collectors.toList());
     }
 
-    // Get Students by Level
-    public List<StudentDto> getStudentsByLevel(String level) {
-        return studentRepository.findByLevel(level).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
     // Update Student
     public Optional<StudentDto> updateStudent(Long id, StudentDto studentDto, MultipartFile avatarFile)
             throws IOException {
