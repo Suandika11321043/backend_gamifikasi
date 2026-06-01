@@ -19,6 +19,7 @@ public class StudentController {
 
     @Autowired
     private StudentService studentService;
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StudentDto> createStudent(
             @RequestParam("name") String name,
@@ -30,8 +31,10 @@ public class StudentController {
             studentDto.setGroup(group);
             StudentDto created = studentService.createStudent(studentDto, avatarFile);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -44,8 +47,10 @@ public class StudentController {
                 return ResponseEntity.noContent().build();
             }
             return new ResponseEntity<>(students, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -59,8 +64,10 @@ public class StudentController {
             } else {
                 return ResponseEntity.notFound().build();
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -73,22 +80,10 @@ public class StudentController {
                 return ResponseEntity.noContent().build();
             }
             return new ResponseEntity<>(students, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    // Get Students by Level
-    @GetMapping("/level/{level}")
-    public ResponseEntity<List<StudentDto>> getStudentsByLevel(@PathVariable("level") String level) {
-        try {
-            List<StudentDto> students = studentService.getStudentsByLevel(level);
-            if (students.isEmpty()) {
-                return ResponseEntity.noContent().build();
-            }
-            return new ResponseEntity<>(students, HttpStatus.OK);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -109,8 +104,10 @@ public class StudentController {
             } else {
                 return ResponseEntity.notFound().build();
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -124,8 +121,10 @@ public class StudentController {
             } else {
                 return ResponseEntity.notFound().build();
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 }

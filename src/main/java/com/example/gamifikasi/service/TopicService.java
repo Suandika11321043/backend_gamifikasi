@@ -28,14 +28,15 @@ public class TopicService {
                 topic.getId(),
                 topic.getNameTopic(),
                 topic.getDescription(),
-                topic.getIcon()
-        );
+                topic.getIcon(),
+                topic.getIsActive());
     }
 
     public TopicDto createTopic(TopicDto createDto, MultipartFile iconFile) throws IOException {
         Topic topic = new Topic();
         topic.setNameTopic(createDto.getNameTopic());
         topic.setDescription(createDto.getDescription());
+        topic.setIsActive(createDto.getIsActive() != null ? createDto.getIsActive() : true);
         if (iconFile != null && !iconFile.isEmpty()) {
             String iconUrl = fileStorageUtil.storeFile(iconFile);
             topic.setIcon(iconUrl);
@@ -57,13 +58,19 @@ public class TopicService {
         return topicRepository.findByNameTopic(nameTopic).map(this::convertToDto);
     }
 
-    public Optional<TopicDto> updateTopic(Long id, String nameTopic, String description, MultipartFile iconFile) throws IOException {
+    public Optional<TopicDto> updateTopic(Long id, String nameTopic, String description, Boolean isActive,
+            MultipartFile iconFile)
+            throws IOException {
         Optional<Topic> existingOpt = topicRepository.findById(id);
-        if (existingOpt.isEmpty()) return Optional.empty();
+        if (existingOpt.isEmpty())
+            return Optional.empty();
 
         Topic topic = existingOpt.get();
         topic.setNameTopic(nameTopic);
         topic.setDescription(description);
+        if (isActive != null) {
+            topic.setIsActive(isActive);
+        }
 
         if (iconFile != null && !iconFile.isEmpty()) {
             fileStorageUtil.deleteFile(topic.getIcon());
@@ -71,6 +78,20 @@ public class TopicService {
         }
 
         return Optional.of(convertToDto(topicRepository.save(topic)));
+    }
+
+    public List<TopicDto> getActiveTopics() {
+        return topicRepository.findAll().stream()
+                .filter(t -> Boolean.TRUE.equals(t.getIsActive()))
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<TopicDto> setActive(Long id, boolean active) {
+        return topicRepository.findById(id).map(topic -> {
+            topic.setIsActive(active);
+            return convertToDto(topicRepository.save(topic));
+        });
     }
 
     public boolean deleteTopic(Long id) {

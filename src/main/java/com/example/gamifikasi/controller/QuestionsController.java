@@ -21,7 +21,7 @@ public class QuestionsController {
     private QuestionsService questionsService;
 
     // Create Question
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping
     public ResponseEntity<QuestionsDto> createQuestion(
             @RequestParam("topicId") Long topicId,
             @RequestParam("questionType") String questionType,
@@ -34,8 +34,10 @@ public class QuestionsController {
             QuestionsDto created = questionsService.createQuestion(topicId, questionType, contentInstruction, imageFile,
                     audioFile, timeLimitMinutes, scorePoint);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -47,8 +49,10 @@ public class QuestionsController {
             if (list.isEmpty())
                 return ResponseEntity.noContent().build();
             return new ResponseEntity<>(list, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -59,8 +63,10 @@ public class QuestionsController {
             Optional<QuestionsDto> data = questionsService.getQuestionById(id);
             return data.map(q -> new ResponseEntity<>(q, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -72,13 +78,15 @@ public class QuestionsController {
             if (list.isEmpty())
                 return ResponseEntity.noContent().build();
             return new ResponseEntity<>(list, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
     // Update Question
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping("/{id}")
     public ResponseEntity<QuestionsDto> updateQuestion(
             @PathVariable("id") Long id,
             @RequestParam("topicId") Long topicId,
@@ -93,8 +101,10 @@ public class QuestionsController {
                     contentInstruction, imageFile, audioFile, timeLimitMinutes, scorePoint);
             return updated.map(q -> new ResponseEntity<>(q, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -110,8 +120,10 @@ public class QuestionsController {
             Optional<QuestionsDto> updated = questionsService.updateTimerLimit(id, timeLimitMinutes);
             return updated.map(q -> new ResponseEntity<>(q, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -123,8 +135,10 @@ public class QuestionsController {
             return deleted
                     ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
                     : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 }

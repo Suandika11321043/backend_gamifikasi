@@ -34,8 +34,10 @@ public class QuestionOptionsController {
             QuestionOptionsDto created = questionOptionsService.createOption(
                     questionId, teksOpsi, mediaOpsiFile, kunciJawaban, urutanBenar, tipeItem);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -44,10 +46,13 @@ public class QuestionOptionsController {
     public ResponseEntity<List<QuestionOptionsDto>> getAllOptions() {
         try {
             List<QuestionOptionsDto> list = questionOptionsService.getAllOptions();
-            if (list.isEmpty()) return ResponseEntity.noContent().build();
+            if (list.isEmpty())
+                return ResponseEntity.noContent().build();
             return new ResponseEntity<>(list, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -58,20 +63,26 @@ public class QuestionOptionsController {
             Optional<QuestionOptionsDto> data = questionOptionsService.getOptionById(id);
             return data.map(opt -> new ResponseEntity<>(opt, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
     // Get Options by Question ID
     @GetMapping("/question/{questionId}")
-    public ResponseEntity<List<QuestionOptionsDto>> getOptionsByQuestionId(@PathVariable("questionId") Long questionId) {
+    public ResponseEntity<List<QuestionOptionsDto>> getOptionsByQuestionId(
+            @PathVariable("questionId") Long questionId) {
         try {
             List<QuestionOptionsDto> list = questionOptionsService.getOptionsByQuestionId(questionId);
-            if (list.isEmpty()) return ResponseEntity.noContent().build();
+            if (list.isEmpty())
+                return ResponseEntity.noContent().build();
             return new ResponseEntity<>(list, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -90,8 +101,10 @@ public class QuestionOptionsController {
                     id, questionId, teksOpsi, mediaOpsiFile, kunciJawaban, urutanBenar, tipeItem);
             return updated.map(opt -> new ResponseEntity<>(opt, HttpStatus.OK))
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -103,8 +116,10 @@ public class QuestionOptionsController {
             return deleted
                     ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
                     : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 }

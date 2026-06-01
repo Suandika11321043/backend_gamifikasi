@@ -62,12 +62,10 @@ public class JigsawPuzzleController {
             dto.setGridCols(gridCols);
             dto.setImageUrl(imageUrl);
             return new ResponseEntity<>(jigsawPuzzleService.createPuzzle(dto, imageFile), HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -78,8 +76,10 @@ public class JigsawPuzzleController {
             if (list.isEmpty())
                 return ResponseEntity.noContent().build();
             return ResponseEntity.ok(list);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -89,8 +89,10 @@ public class JigsawPuzzleController {
             return jigsawPuzzleService.getPuzzleById(puzzleId)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -114,10 +116,10 @@ public class JigsawPuzzleController {
             dto.setGridCols(gridCols);
             dto.setImageUrl(imageUrl);
             return ResponseEntity.ok(jigsawPuzzleService.updatePuzzle(puzzleId, dto, imageFile));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -126,8 +128,10 @@ public class JigsawPuzzleController {
         try {
             jigsawPuzzleService.deletePuzzle(puzzleId);
             return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -153,10 +157,10 @@ public class JigsawPuzzleController {
             dto.setCorrectPosition(correctPosition);
             dto.setPieceImageUrl(pieceImageUrl);
             return new ResponseEntity<>(jigsawPuzzleService.addPiece(puzzleId, dto, imageFile), HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -167,8 +171,10 @@ public class JigsawPuzzleController {
             if (list.isEmpty())
                 return ResponseEntity.noContent().build();
             return ResponseEntity.ok(list);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -192,10 +198,10 @@ public class JigsawPuzzleController {
             dto.setCorrectPosition(correctPosition);
             dto.setPieceImageUrl(pieceImageUrl);
             return ResponseEntity.ok(jigsawPuzzleService.updatePiece(pieceId, dto, imageFile));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -204,8 +210,10 @@ public class JigsawPuzzleController {
         try {
             jigsawPuzzleService.deletePiece(pieceId);
             return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -221,8 +229,10 @@ public class JigsawPuzzleController {
             return jigsawPuzzleService.getPuzzleByQuestionIdForStudent(questionId)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -239,10 +249,10 @@ public class JigsawPuzzleController {
     public ResponseEntity<JigsawProgressResponse> checkProgress(@RequestBody JigsawProgressRequest request) {
         try {
             return ResponseEntity.ok(jigsawPuzzleService.checkProgress(request));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 
@@ -254,10 +264,10 @@ public class JigsawPuzzleController {
     public ResponseEntity<JigsawAnswerResponse> submitAnswer(@RequestBody JigsawAnswerRequest request) {
         try {
             return ResponseEntity.ok(jigsawPuzzleService.submitAnswer(request));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
         }
     }
 }
