@@ -9,12 +9,39 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Long> {
     List<StudentAnswer> findByStudent(Student student);
 
     List<StudentAnswer> findByStudentAndQuestions(Student student, Questions questions);
+
+    /** Cek apakah siswa sudah pernah menjawab soal tertentu. */
+    boolean existsByStudentIdAndQuestionsId(Long studentId, Long questionsId);
+
+    /** Ambil jawaban terbaru siswa untuk soal tertentu. */
+    Optional<StudentAnswer> findTopByStudentIdAndQuestionsIdOrderByIdDesc(Long studentId, Long questionsId);
+
+    /** Semua jawaban siswa untuk semua soal dalam satu topik. */
+    @Query("SELECT sa FROM StudentAnswer sa WHERE sa.student.id = :studentId AND sa.questions.topic.id = :topicId ORDER BY sa.id DESC")
+    List<StudentAnswer> findLatestAnswersByStudentIdAndTopicId(@Param("studentId") Long studentId, @Param("topicId") Long topicId);
+
+    /** Semua riwayat jawaban siswa (seluruh topik), diurutkan terbaru dulu. */
+    @Query("SELECT sa FROM StudentAnswer sa WHERE sa.student.id = :studentId ORDER BY sa.id DESC")
+    List<StudentAnswer> findAllByStudentId(@Param("studentId") Long studentId);
+
+    /** Riwayat jawaban siswa difilter per topik. */
+    @Query("SELECT sa FROM StudentAnswer sa WHERE sa.student.id = :studentId AND sa.questions.topic.id = :topicId ORDER BY sa.id DESC")
+    List<StudentAnswer> findAllByStudentIdAndTopicId(@Param("studentId") Long studentId, @Param("topicId") Long topicId);
+
+    /** Riwayat jawaban siswa difilter per learningDate. */
+    @Query("SELECT sa FROM StudentAnswer sa WHERE sa.student.id = :studentId AND sa.questions.learningDate = :learningDate ORDER BY sa.id DESC")
+    List<StudentAnswer> findAllByStudentIdAndLearningDate(@Param("studentId") Long studentId, @Param("learningDate") java.time.LocalDate learningDate);
+
+    /** Riwayat jawaban siswa difilter per topik + learningDate. */
+    @Query("SELECT sa FROM StudentAnswer sa WHERE sa.student.id = :studentId AND sa.questions.topic.id = :topicId AND sa.questions.learningDate = :learningDate ORDER BY sa.id DESC")
+    List<StudentAnswer> findAllByStudentIdAndTopicIdAndLearningDate(@Param("studentId") Long studentId, @Param("topicId") Long topicId, @Param("learningDate") java.time.LocalDate learningDate);
 
     List<StudentAnswer> findByQuestions(Questions questions);
 

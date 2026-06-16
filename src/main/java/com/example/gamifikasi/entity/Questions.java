@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Entity
 @Setter
 @Getter
@@ -17,6 +19,9 @@ public class Questions {
     @ManyToOne
     @JoinColumn(name = "topic_id")
     private Topic topic;
+
+    @Column(name = "learning_date")
+    private LocalDate learningDate;
 
     @Column(name = "question_type")
     private String questionType;
@@ -35,4 +40,7 @@ public class Questions {
 
     @Column(name = "score_point")
     private Integer scorePoint;
+
+    @Column(name = "is_available", nullable = false)
+    private Boolean isAvailable = false;
 }

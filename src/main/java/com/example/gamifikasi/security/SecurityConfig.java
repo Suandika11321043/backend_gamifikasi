@@ -44,14 +44,19 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/students", "/api/students/**",
                                 "/api/topics", "/api/topics/**", "/api/quiz/**", "/api/uploads/**",
                                 "/api/matching-relations", "/api/matching-relations/**", "/api/jigsaw/puzzles/**",
-                                "/api/jigsaw/questions/**")
+                                "/api/jigsaw/questions/**", "/api/weeks/**", "/api/questions", "/api/questions/**")
                         .permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/topics/*/activate",
                                 "/api/topics/*/deactivate", "/api/questions/*/timer")
                         .permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/submit",
                                 "/api/quiz/submit/answer", "/api/quiz/finish", "/api/jigsaw/submit",
-                                "/api/jigsaw/progress")
+                                "/api/jigsaw/progress", "/api/topics/*/weeks", "/api/weeks/*/days")
+                        .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE,
+                                "/api/topics/*/weeks/*", "/api/weeks/*/days/*")
+                        .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/topics/*/weeks/*")
                         .permitAll()
                         .requestMatchers("/api/matching-relations", "/api/matching-relations/**").permitAll()
                         .anyRequest().authenticated())
