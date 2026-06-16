@@ -1,6 +1,7 @@
 package com.example.gamifikasi.service;
 
 import com.example.gamifikasi.dto.*;
+import java.util.LinkedHashMap;
 import com.example.gamifikasi.entity.*;
 import com.example.gamifikasi.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +36,9 @@ public class QuizService {
     private MatchingRelationRepository matchingRelationRepository;
 
     @Autowired
+    private JigsawPuzzleRepository jigsawPuzzleRepository;
+
+    @Autowired
     private StudentAnswerRepository studentAnswerRepository;
 
     @Autowired
@@ -50,8 +54,22 @@ public class QuizService {
     public List<QuestionWithOptionsDto> getQuestionsByTopic(Long topicId) {
         Topic topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
-
         return questionsRepository.findByTopic(topic).stream()
+                .map(this::toQuestionWithOptionsDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Ambil soal berdasarkan topik + tanggal spesifik.
+     * GET /api/quiz/topics/{topicId}/date/{date}/questions
+     */
+    public List<QuestionWithOptionsDto> getQuestionsByTopicAndDate(
+            Long topicId, java.time.LocalDate date) {
+        Topic topic = topicRepository.findById(topicId)
+                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+        return questionsRepository
+                .findByTopicAndLearningDate(topic, date)
+                .stream()
                 .map(this::toQuestionWithOptionsDto)
                 .collect(Collectors.toList());
     }
@@ -89,6 +107,10 @@ public class QuizService {
         AnswerRequest answerReq = request.getAnswer();
         Questions question = questionsRepository.findById(answerReq.getQuestionId())
                 .orElseThrow(() -> new RuntimeException("Soal tidak ditemukan: " + answerReq.getQuestionId()));
+
+        if (studentAnswerRepository.existsByStudentIdAndQuestionsId(student.getId(), question.getId())) {
+            throw new IllegalStateException("Soal ini sudah dikerjakan. Anda hanya dapat melihat jawaban yang telah dikirim.");
+        }
 
         boolean isCorrect = gradeAnswer(question, answerReq);
         int baseScore = question.getScorePoint() != null ? question.getScorePoint() : 100;
@@ -186,12 +208,20 @@ public class QuizService {
             Questions question = questionsRepository.findById(answerReq.getQuestionId())
                     .orElseThrow(() -> new RuntimeException("Soal tidak ditemukan: " + answerReq.getQuestionId()));
 
+            if (studentAnswerRepository.existsByStudentIdAndQuestionsId(student.getId(), question.getId())) {
+                // Soal sudah dijawab – lewati, hitung dari data tersimpan
+                studentAnswerRepository.findTopByStudentIdAndQuestionsIdOrderByIdDesc(student.getId(), question.getId())
+                        .ifPresent(existing -> details.add(new AnswerResultDto(question.getId(),
+                                Boolean.TRUE.equals(existing.getIsCorrect()),
+                                existing.getEarnedScore() != null ? existing.getEarnedScore() : 0)));
+                continue;
+            }
+
             boolean isCorrect = gradeAnswer(question, answerReq);
             int baseScore = question.getScorePoint() != null ? question.getScorePoint() : 100;
             int earnedScore = isCorrect ? baseScore : 0;
             if (isCorrect)
                 correctCount++;
-            ;
 
             // Simpan jawaban siswa
             StudentAnswer studentAnswer = new StudentAnswer();
@@ -311,6 +341,185 @@ public class QuizService {
 
     public List<StudentRank> getAllRanks() {
         return studentRankRepository.findAll();
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // GET: soal beserta kunci jawaban (admin / review)
+    // ────────────────────────────────────────────────────────────
+
+    /**
+     * Ambil soal + kunci jawaban berdasarkan topik & tanggal.
+     * GET /api/quiz/topics/{topicId}/date/{date}/questions/answer
+     */
+    public List<QuestionWithCorrectAnswerDto> getQuestionsWithAnswersByTopicAndDate(
+            Long topicId, java.time.LocalDate date) {
+        Topic topic = topicRepository.findById(topicId)
+                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+        return questionsRepository.findByTopicAndLearningDate(topic, date).stream()
+                .map(this::toQuestionWithCorrectAnswerDto)
+                .collect(Collectors.toList());
+    }
+
+    private QuestionWithCorrectAnswerDto toQuestionWithCorrectAnswerDto(Questions q) {
+        List<com.example.gamifikasi.entity.QuestionOptions> optionEntities =
+                questionOptionsRepository.findByQuestions(q);
+
+        List<QuestionWithCorrectAnswerDto.OptionWithAnswerDto> options = optionEntities.stream()
+                .map(o -> new QuestionWithCorrectAnswerDto.OptionWithAnswerDto(
+                        o.getId(),
+                        o.getTeksOpsi(),
+                        o.getMediaOpsi(),
+                        o.getTipeItem() != null ? o.getTipeItem().name() : null,
+                        o.getKunciJawaban(),
+                        o.getUrutanBenar()))
+                .collect(Collectors.toList());
+
+        List<QuestionWithCorrectAnswerDto.MatchingPairDto> correctPairs =
+                matchingRelationRepository.findByQuestions(q).stream()
+                        .map(r -> new QuestionWithCorrectAnswerDto.MatchingPairDto(
+                                r.getOpsiPertanyaan().getId(),
+                                r.getOpsiJawaban().getId()))
+                        .collect(Collectors.toList());
+
+        // Puzzle answer: filled only for PUZZLE type
+        QuestionWithCorrectAnswerDto.PuzzleAnswerDto puzzleAnswer = null;
+        if ("PUZZLE".equalsIgnoreCase(q.getQuestionType())) {
+            puzzleAnswer = jigsawPuzzleRepository.findByQuestion(q).map(puzzle -> {
+                List<QuestionWithCorrectAnswerDto.PiecePosDto> pieces = puzzle.getPieces().stream()
+                        .map(p -> new QuestionWithCorrectAnswerDto.PiecePosDto(
+                                p.getId(),
+                                p.getPieceIndex(),
+                                p.getCorrectPosition(),
+                                p.getPieceImageUrl()))
+                        .collect(Collectors.toList());
+                return new QuestionWithCorrectAnswerDto.PuzzleAnswerDto(
+                        puzzle.getId(),
+                        puzzle.getImageUrl(),
+                        puzzle.getGridRows(),
+                        puzzle.getGridCols(),
+                        pieces);
+            }).orElse(null);
+        }
+
+        return new QuestionWithCorrectAnswerDto(
+                q.getId(),
+                q.getQuestionType(),
+                q.getContentInstruction(),
+                q.getContentImage(),
+                q.getContentAudio(),
+                q.getTimeLimitMinutes(),
+                q.getScorePoint(),
+                options,
+                correctPairs,
+                puzzleAnswer);
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // GET: jawaban siswa per topik + detail soal
+    // ────────────────────────────────────────────────────────────
+
+    /**
+     * Ambil jawaban siswa untuk setiap soal dalam topik, dilengkapi detail soal.
+     * Soal yang belum dikerjakan tetap muncul dengan correct/earnedScore = null.
+     * GET /api/quiz/students/{studentId}/topics/{topicId}/answers
+     */
+    public List<StudentAnswerDetailDto> getStudentAnswersDetailForTopic(
+            Long studentId, Long topicId, java.time.LocalDate learningDate) {
+        if (!studentRepository.existsById(studentId))
+            throw new RuntimeException("Siswa tidak ditemukan: " + studentId);
+        Topic topic = topicRepository.findById(topicId)
+                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+
+        List<Questions> questions = learningDate != null
+                ? questionsRepository.findByTopicAndLearningDate(topic, learningDate)
+                : questionsRepository.findByTopic(topic);
+
+        return questions.stream().map(q -> {
+            List<QuestionWithOptionsDto.OptionDto> opts = questionOptionsRepository.findByQuestions(q).stream()
+                    .map(o -> new QuestionWithOptionsDto.OptionDto(
+                            o.getId(),
+                            o.getTeksOpsi(),
+                            o.getMediaOpsi(),
+                            o.getTipeItem() != null ? o.getTipeItem().name() : null))
+                    .collect(Collectors.toList());
+
+            Boolean correct = null;
+            Integer earnedScore = null;
+            String submittedAnswer = null;
+
+            Optional<StudentAnswer> answerOpt =
+                    studentAnswerRepository.findTopByStudentIdAndQuestionsIdOrderByIdDesc(studentId, q.getId());
+            if (answerOpt.isPresent()) {
+                StudentAnswer sa = answerOpt.get();
+                correct = sa.getIsCorrect();
+                earnedScore = sa.getEarnedScore();
+                submittedAnswer = sa.getStudentAnswer();
+            }
+
+            return new StudentAnswerDetailDto(
+                    q.getId(),
+                    q.getQuestionType(),
+                    q.getContentInstruction(),
+                    q.getContentImage(),
+                    q.getContentAudio(),
+                    q.getTimeLimitMinutes(),
+                    q.getScorePoint(),
+                    opts,
+                    correct,
+                    earnedScore,
+                    submittedAnswer);
+        }).collect(Collectors.toList());
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // VIEW: jawaban yang sudah dikerjakan siswa
+    // ────────────────────────────────────────────────────────────
+
+    /**
+     * Ambil jawaban siswa untuk satu soal tertentu.
+     * Mengembalikan empty jika siswa belum pernah mengerjakan soal tsb.
+     */
+    public Optional<StudentAnswerViewDto> getStudentAnswerForQuestion(Long studentId, Long questionId) {
+        if (!studentRepository.existsById(studentId))
+            throw new RuntimeException("Siswa tidak ditemukan: " + studentId);
+        if (!questionsRepository.existsById(questionId))
+            throw new RuntimeException("Soal tidak ditemukan: " + questionId);
+
+        return studentAnswerRepository
+                .findTopByStudentIdAndQuestionsIdOrderByIdDesc(studentId, questionId)
+                .map(sa -> new StudentAnswerViewDto(
+                        questionId,
+                        Boolean.TRUE.equals(sa.getIsCorrect()),
+                        sa.getEarnedScore() != null ? sa.getEarnedScore() : 0,
+                        sa.getStudentAnswer()));
+    }
+
+    /**
+     * Ambil semua jawaban siswa untuk semua soal dalam satu topik.
+     * Berguna untuk menampilkan review hasil kuis setelah selesai.
+     */
+    public List<StudentAnswerViewDto> getStudentAnswersForTopic(Long studentId, Long topicId) {
+        if (!studentRepository.existsById(studentId))
+            throw new RuntimeException("Siswa tidak ditemukan: " + studentId);
+        if (!topicRepository.existsById(topicId))
+            throw new RuntimeException("Topik tidak ditemukan: " + topicId);
+
+        List<StudentAnswer> answers = studentAnswerRepository
+                .findLatestAnswersByStudentIdAndTopicId(studentId, topicId);
+
+        // Deduplikasi: ambil jawaban terbaru per soal
+        Map<Long, StudentAnswer> latest = new LinkedHashMap<>();
+        for (StudentAnswer sa : answers) {
+            latest.putIfAbsent(sa.getQuestions().getId(), sa);
+        }
+
+        return latest.values().stream()
+                .map(sa -> new StudentAnswerViewDto(
+                        sa.getQuestions().getId(),
+                        Boolean.TRUE.equals(sa.getIsCorrect()),
+                        sa.getEarnedScore() != null ? sa.getEarnedScore() : 0,
+                        sa.getStudentAnswer()))
+                .collect(Collectors.toList());
     }
 
     // ────────────────────────────────────────────────────────────

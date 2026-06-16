@@ -11,4 +11,6 @@ import java.util.List;
 public interface QuestionsRepository extends JpaRepository<Questions, Long> {
     List<Questions> findByTopic(Topic topic);
     List<Questions> findByQuestionType(String questionType);
+    List<Questions> findByTopicAndLearningDate(Topic topic, java.time.LocalDate learningDate);
+    List<Questions> findByTopicAndLearningDateBetween(Topic topic, java.time.LocalDate from, java.time.LocalDate to);
 }

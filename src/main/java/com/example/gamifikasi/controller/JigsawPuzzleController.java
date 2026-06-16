@@ -223,8 +223,7 @@ public class JigsawPuzzleController {
      * Ambil puzzle untuk dikerjakan siswa.
      * Keping dikembalikan dalam urutan acak, correctPosition disembunyikan.
      */
-    @GetMapping("/questions/{questionId}/puzzle")
-    public ResponseEntity<JigsawPuzzleDto> getPuzzleForStudent(@PathVariable Long questionId) {
+    @GetMapping("/questions/{questionId}/puzzle")    public ResponseEntity<JigsawPuzzleDto> getPuzzleForStudent(@PathVariable Long questionId) {
         try {
             return jigsawPuzzleService.getPuzzleByQuestionIdForStudent(questionId)
                     .map(ResponseEntity::ok)
@@ -264,6 +263,24 @@ public class JigsawPuzzleController {
     public ResponseEntity<JigsawAnswerResponse> submitAnswer(@RequestBody JigsawAnswerRequest request) {
         try {
             return ResponseEntity.ok(jigsawPuzzleService.submitAnswer(request));
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
+        }
+    }
+
+    /**
+     * Review hasil pengerjaan puzzle siswa – membandingkan posisi yang diletakkan
+     * siswa dengan correctPosition yang sebenarnya.
+     * GET /api/jigsaw/students/{studentId}/questions/{questionId}/review
+     */
+    @GetMapping("/students/{studentId}/questions/{questionId}/review")
+    public ResponseEntity<JigsawReviewDto> getJigsawReview(
+            @PathVariable Long studentId,
+            @PathVariable Long questionId) {
+        try {
+            return ResponseEntity.ok(jigsawPuzzleService.getJigsawReview(studentId, questionId));
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

@@ -38,6 +38,31 @@ public class QuizController {
         return ResponseEntity.ok(quizService.getQuestionsByTopic(topicId));
     }
 
+    /**
+     * Ambil soal untuk tanggal tertentu.
+     * GET /api/quiz/topics/{topicId}/date/{date}/questions  (contoh: date=2025-06-13)
+     */
+    @GetMapping("/topics/{topicId}/date/{date}/questions")
+    public ResponseEntity<List<QuestionWithOptionsDto>> getQuestionsByDate(
+            @PathVariable Long topicId,
+            @PathVariable @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+        return ResponseEntity.ok(quizService.getQuestionsByTopicAndDate(topicId, date));
+    }
+
+    /**
+     * Ambil soal + kunci jawaban yang benar berdasarkan topik & tanggal.
+     * GET /api/quiz/topics/{topicId}/date/{date}/questions/answer
+     */
+    @GetMapping("/topics/{topicId}/date/{date}/questions/answer")
+    public ResponseEntity<List<QuestionWithCorrectAnswerDto>> getQuestionsWithAnswers(
+            @PathVariable Long topicId,
+            @PathVariable @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+        List<QuestionWithCorrectAnswerDto> list =
+                quizService.getQuestionsWithAnswersByTopicAndDate(topicId, date);
+        if (list.isEmpty()) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(list);
+    }
+
     // ─── Submit satu jawaban (mode soal satu-per-satu) ──────────
 
     /**
@@ -73,6 +98,40 @@ public class QuizController {
     public ResponseEntity<java.util.Map<String, Object>> debugQuestion(
             @PathVariable Long questionId) {
         return ResponseEntity.ok(quizService.debugQuestion(questionId));
+    }
+
+    // ─── Lihat jawaban yang sudah dikerjakan ─────────────────────
+
+    /**
+     * Ambil jawaban siswa untuk satu soal.
+     * GET /api/quiz/students/{studentId}/questions/{questionId}/answer
+     */
+    @GetMapping("/students/{studentId}/questions/{questionId}/answer")
+    public ResponseEntity<StudentAnswerViewDto> getStudentAnswer(
+            @PathVariable Long studentId,
+            @PathVariable Long questionId) {
+        return quizService.getStudentAnswerForQuestion(studentId, questionId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Ambil semua jawaban siswa untuk seluruh soal dalam satu topik,
+     * dilengkapi detail soal dan opsi. Soal yang belum dikerjakan tetap muncul
+     * dengan correct/earnedScore/submittedAnswer = null.
+     * GET /api/quiz/students/{studentId}/topics/{topicId}/answers
+     */
+    @GetMapping("/students/{studentId}/topics/{topicId}/answers")
+    public ResponseEntity<List<StudentAnswerDetailDto>> getStudentAnswersForTopic(
+            @PathVariable Long studentId,
+            @PathVariable Long topicId,
+            @RequestParam(value = "date", required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate date) {
+        List<StudentAnswerDetailDto> list =
+                quizService.getStudentAnswersDetailForTopic(studentId, topicId, date);
+        if (list.isEmpty()) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(list);
     }
 
     // ─── Skor siswa ──────────────────────────────────────────────
