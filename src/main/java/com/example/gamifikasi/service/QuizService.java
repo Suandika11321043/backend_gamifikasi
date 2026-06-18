@@ -47,6 +47,9 @@ public class QuizService {
     @Autowired
     private StudentRankRepository studentRankRepository;
 
+    @Autowired
+    private QuestionsService questionsService;
+
     // ────────────────────────────────────────────────────────────
     // GET: ambil semua soal beserta opsi untuk satu topik
     // ────────────────────────────────────────────────────────────
@@ -67,6 +70,9 @@ public class QuizService {
             Long topicId, java.time.LocalDate date) {
         Topic topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+        if (!questionsService.isLearningDateAvailable(topicId, date)) {
+            throw new RuntimeException("Soal untuk tanggal ini belum tersedia.");
+        }
         return questionsRepository
                 .findByTopicAndLearningDate(topic, date)
                 .stream()

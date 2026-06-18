@@ -1,5 +1,6 @@
 package com.example.gamifikasi.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,12 @@ import java.util.List;
 @AllArgsConstructor
 public class LearningDateGroupDto {
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate learningDate;
+
+    /** Ketersediaan soal untuk tanggal ini (diatur per learning date, bukan per soal). */
+    private Boolean isAvailable;
+
     private List<QuestionWithStatusDto> questions;
 
     @Getter

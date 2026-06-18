@@ -36,10 +36,13 @@ public class MatchingRelationService {
     }
 
     // Create
-    public MatchingRelationDto  createRelation(Long questionId, Long opsiPertanyaanId, Long opsiJawabanId) {
-        MatchingRelation rel = new MatchingRelation();
+    public MatchingRelationDto createRelation(Long questionId, Long opsiPertanyaanId, Long opsiJawabanId) {
+        Questions question = questionsRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("Soal tidak ditemukan: " + questionId));
 
-        Questions question = questionsRepository.findById(questionId).orElse(null);
+        validateExactPair(question, opsiPertanyaanId, opsiJawabanId, null);
+
+        MatchingRelation rel = new MatchingRelation();
         rel.setQuestions(question);
 
         QuestionOptions opsiP = questionOptionsRepository.findById(opsiPertanyaanId).orElse(null);
@@ -77,8 +80,12 @@ public class MatchingRelationService {
         Optional<MatchingRelation> existingOpt = matchingRelationRepository.findById(id);
         if (existingOpt.isEmpty()) return Optional.empty();
 
+        Questions question = questionsRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("Soal tidak ditemukan: " + questionId));
+
+        validateExactPair(question, opsiPertanyaanId, opsiJawabanId, id);
+
         MatchingRelation rel = existingOpt.get();
-        Questions question = questionsRepository.findById(questionId).orElse(null);
         rel.setQuestions(question);
 
         QuestionOptions opsiP = questionOptionsRepository.findById(opsiPertanyaanId).orElse(null);
@@ -97,5 +104,20 @@ public class MatchingRelationService {
             return true;
         }
         return false;
+    }
+
+    /** Hanya tolak jika kombinasi kiri+kanan persis sama sudah ada. */
+    private void validateExactPair(Questions question, Long opsiPertanyaanId, Long opsiJawabanId, Long excludeId) {
+        for (MatchingRelation r : matchingRelationRepository.findByQuestions(question)) {
+            if (excludeId != null && excludeId.equals(r.getId())) continue;
+
+            Long leftId = r.getOpsiPertanyaan() != null ? r.getOpsiPertanyaan().getId() : null;
+            Long rightId = r.getOpsiJawaban() != null ? r.getOpsiJawaban().getId() : null;
+
+            if (leftId != null && rightId != null
+                    && leftId.equals(opsiPertanyaanId) && rightId.equals(opsiJawabanId)) {
+                throw new IllegalArgumentException("Pasangan ini sudah ada.");
+            }
+        }
     }
 }

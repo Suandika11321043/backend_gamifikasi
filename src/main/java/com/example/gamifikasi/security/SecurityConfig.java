@@ -44,7 +44,8 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/students", "/api/students/**",
                                 "/api/topics", "/api/topics/**", "/api/quiz/**", "/api/uploads/**",
                                 "/api/matching-relations", "/api/matching-relations/**", "/api/jigsaw/puzzles/**",
-                                "/api/jigsaw/questions/**", "/api/weeks/**", "/api/questions", "/api/questions/**")
+                                "/api/jigsaw/questions/**", "/api/jigsaw/students/**", "/api/weeks/**", "/api/questions", "/api/questions/**",
+                                "/api/dashboard", "/api/dashboard/**")
                         .permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/topics/*/activate",
                                 "/api/topics/*/deactivate", "/api/questions/*/timer")
