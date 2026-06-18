@@ -84,7 +84,11 @@ public class JigsawPuzzleService {
         JigsawPuzzleDto dto = new JigsawPuzzleDto();
         dto.setId(puzzle.getId());
         dto.setQuestionId(q.getId());
-        dto.setImageUrl(puzzle.getImageUrl());
+        String imageUrl = puzzle.getImageUrl();
+        if (imageUrl == null || imageUrl.isBlank()) {
+            imageUrl = q.getContentImage();
+        }
+        dto.setImageUrl(imageUrl);
         dto.setGridRows(puzzle.getGridRows());
         dto.setGridCols(puzzle.getGridCols());
         dto.setPieces(pieceDtos);
@@ -512,10 +516,15 @@ public class JigsawPuzzleService {
                 : (correctCount == pieces.size() && !pieces.isEmpty());
         int earnedScore = storedEarnedScore != null ? storedEarnedScore : 0;
 
+        String imageUrl = puzzle.getImageUrl();
+        if (imageUrl == null || imageUrl.isBlank()) {
+            imageUrl = question.getContentImage();
+        }
+
         return new JigsawReviewDto(
                 puzzle.getId(),
                 questionId,
-                puzzle.getImageUrl(),
+                imageUrl,
                 puzzle.getGridRows(),
                 puzzle.getGridCols(),
                 question.getContentInstruction(),

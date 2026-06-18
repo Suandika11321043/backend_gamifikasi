@@ -43,4 +43,8 @@ public class Questions {
 
     @Column(name = "is_available", nullable = false)
     private Boolean isAvailable = false;
+
+    /** VERTICAL (default) atau HORIZONTAL — hanya untuk tipe SORTING. */
+    @Column(name = "sort_layout")
+    private String sortLayout = "VERTICAL";
 }

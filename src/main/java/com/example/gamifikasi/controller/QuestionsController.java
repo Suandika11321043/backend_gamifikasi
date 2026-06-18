@@ -1,5 +1,6 @@
 package com.example.gamifikasi.controller;
 
+import com.example.gamifikasi.dto.LearningDateAvailabilityDto;
 import com.example.gamifikasi.dto.LearningDateGroupDto;
 import com.example.gamifikasi.dto.QuestionsDto;
 import com.example.gamifikasi.dto.StudentAnswerHistoryDto;
@@ -172,18 +173,41 @@ public class QuestionsController {
                 : ResponseEntity.notFound().build();
     }
 
-    // Set isAvailable = true for all questions in a topic on a given learningDate
-    @PostMapping("/topic/{topicId}/set-available")
-    public ResponseEntity<List<QuestionsDto>> setAvailable(
+    // Get ketersediaan per learning date untuk satu topik
+    @GetMapping("/topic/{topicId}/learning-dates")
+    public ResponseEntity<List<LearningDateAvailabilityDto>> getLearningDateAvailability(
+            @PathVariable Long topicId) {
+        List<LearningDateAvailabilityDto> list = questionsService.getAvailabilityByTopic(topicId);
+        if (list.isEmpty()) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(list);
+    }
+
+    // Get ketersediaan satu tanggal belajar
+    @GetMapping("/topic/{topicId}/date/{date}/availability")
+    public ResponseEntity<LearningDateAvailabilityDto> getAvailabilityForDate(
             @PathVariable Long topicId,
-            @RequestBody java.util.Map<String, String> body) {
-        String dateStr = body.get("learningDate");
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return questionsService.getAvailabilityByTopicAndDate(topicId, date)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Atur ketersediaan per learning date (topik + tanggal)
+    @PostMapping("/topic/{topicId}/set-available")
+    public ResponseEntity<LearningDateAvailabilityDto> setAvailable(
+            @PathVariable Long topicId,
+            @RequestBody java.util.Map<String, Object> body) {
+        String dateStr = body.get("learningDate") != null ? body.get("learningDate").toString() : null;
         if (dateStr == null || dateStr.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
         LocalDate learningDate = LocalDate.parse(dateStr);
-        List<QuestionsDto> updated = questionsService.setAvailableByTopicAndDate(topicId, learningDate);
-        if (updated.isEmpty()) return ResponseEntity.noContent().build();
+        boolean available = true;
+        if (body.get("available") != null) {
+            available = Boolean.parseBoolean(body.get("available").toString());
+        }
+        LearningDateAvailabilityDto updated =
+                questionsService.setAvailabilityByTopicAndDate(topicId, learningDate, available);
         return ResponseEntity.ok(updated);
     }
 }
