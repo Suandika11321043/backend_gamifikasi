@@ -31,10 +31,39 @@ public class FileStorageUtil {
      * @return secure URL dari Cloudinary
      */
     public String storeFile(MultipartFile file, String folder) throws IOException {
+        String resourceType = detectResourceType(file);
         Map<?, ?> uploadResult = cloudinary.uploader().upload(
                 file.getBytes(),
-                ObjectUtils.asMap("folder", folder));
+                ObjectUtils.asMap("folder", folder, "resource_type", resourceType));
         return uploadResult.get("secure_url").toString();
+    }
+
+    /**
+     * Cloudinary memisahkan upload: gambar pakai resource_type "image",
+     * audio/video pakai "video". Tanpa ini, file .ogg/.mp3 ditolak dengan "Invalid image file".
+     */
+    private String detectResourceType(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType != null) {
+            if (contentType.startsWith("audio/") || contentType.startsWith("video/")) {
+                return "video";
+            }
+            if (contentType.startsWith("image/")) {
+                return "image";
+            }
+        }
+        String name = file.getOriginalFilename();
+        if (name != null) {
+            String lower = name.toLowerCase();
+            if (lower.matches(".*\\.(mp3|wav|ogg|aac|m4a|flac|opus|webm|mp4|mov|avi|mkv)$")) {
+                return "video";
+            }
+        }
+        return "image";
+    }
+
+    private String detectResourceTypeFromUrl(String url) {
+        return url.contains("/video/upload/") ? "video" : "image";
     }
 
     /**
@@ -63,7 +92,8 @@ public class FileStorageUtil {
 
         String publicId = extractPublicId(url);
         if (!publicId.isEmpty()) {
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            String resourceType = detectResourceTypeFromUrl(url);
+            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType));
         }
     }
 

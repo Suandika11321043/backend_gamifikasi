@@ -144,10 +144,10 @@ public class QuestionsService {
         q.setTimeLimitMinutes(timeLimitMinutes);
         q.setScorePoint(scorePoint);
         if (imageFile != null && !imageFile.isEmpty()) {
-            q.setContentImage(fileStorageUtil.storeFile(imageFile));
+            q.setContentImage(fileStorageUtil.storeFile(imageFile, "questions"));
         }
         if (audioFile != null && !audioFile.isEmpty()) {
-            q.setContentAudio(fileStorageUtil.storeFile(audioFile));
+            q.setContentAudio(fileStorageUtil.storeFile(audioFile, "questions/audio"));
         }
         getOrCreateLearningDate(topic, learningDate);
         q.setIsAvailable(isLearningDateAvailable(topicId, learningDate));
@@ -317,11 +317,11 @@ public class QuestionsService {
         q.setScorePoint(scorePoint);
         if (imageFile != null && !imageFile.isEmpty()) {
             fileStorageUtil.deleteFile(q.getContentImage());
-            q.setContentImage(fileStorageUtil.storeFile(imageFile));
+            q.setContentImage(fileStorageUtil.storeFile(imageFile, "questions"));
         }
         if (audioFile != null && !audioFile.isEmpty()) {
             fileStorageUtil.deleteFile(q.getContentAudio());
-            q.setContentAudio(fileStorageUtil.storeFile(audioFile));
+            q.setContentAudio(fileStorageUtil.storeFile(audioFile, "questions/audio"));
         }
         getOrCreateLearningDate(topic, learningDate);
         q.setIsAvailable(isLearningDateAvailable(topicId, learningDate));
