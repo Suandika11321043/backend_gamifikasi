@@ -20,7 +20,7 @@ public class QuizResultResponse {
     private int correctCount;
     private int totalQuestions;
 
-    /** Bintang yang diperoleh untuk topik ini (0–3). */
+    /** Bintang sesi ini = jumlah soal benar pada sesi kuis yang baru selesai. */
     private int starsEarned;
 
     /** true jika skor/bintang kali ini lebih baik dari percobaan sebelumnya. */

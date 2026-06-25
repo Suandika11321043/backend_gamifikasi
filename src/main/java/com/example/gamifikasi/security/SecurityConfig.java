@@ -51,11 +51,12 @@ public class SecurityConfig {
                                 "/api/topics/*/deactivate", "/api/questions/*/timer")
                         .permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/submit",
-                                "/api/quiz/submit/answer", "/api/quiz/finish", "/api/jigsaw/submit",
+                                "/api/quiz/submit/answer", "/api/quiz/finish", "/api/quiz/timer",
+                                "/api/jigsaw/submit",
                                 "/api/jigsaw/progress", "/api/topics/*/weeks", "/api/weeks/*/days")
                         .permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.DELETE,
-                                "/api/topics/*/weeks/*", "/api/weeks/*/days/*")
+                                "/api/topics/*/weeks/*", "/api/weeks/*/days/*", "/api/quiz/timer/**")
                         .permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/topics/*/weeks/*")
                         .permitAll()

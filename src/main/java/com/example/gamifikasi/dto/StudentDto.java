@@ -16,9 +16,9 @@ public class StudentDto {
     /** Total earned score dari semua jawaban siswa (student_answer.earned_score). */
     private Integer totalEarnedScore;
 
-    /** Total bintang dari semua topik (student_rank.total_bintang). */
+    /** Total bintang dari semua topik (agregasi student_score). */
     private Integer totalStars;
 
-    /** Nama rank siswa saat ini (student_rank.nama_rank). */
+    /** Nama rank siswa (dihitung dari total bintang). */
     private String rankName;
 }

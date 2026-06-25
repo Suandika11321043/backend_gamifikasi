@@ -1,8 +1,8 @@
 package com.example.gamifikasi.service;
 
 import com.example.gamifikasi.dto.*;
+import com.example.gamifikasi.entity.RankLevel;
 import com.example.gamifikasi.entity.Student;
-import com.example.gamifikasi.entity.StudentRank;
 import com.example.gamifikasi.entity.StudentScore;
 import com.example.gamifikasi.entity.Topic;
 import com.example.gamifikasi.repository.*;
@@ -29,9 +29,6 @@ public class DashboardService {
 
     @Autowired
     private StudentScoreRepository studentScoreRepository;
-
-    @Autowired
-    private StudentRankRepository studentRankRepository;
 
     public DashboardStatsDto getStats() {
         DashboardStatsDto stats = new DashboardStatsDto();
@@ -134,15 +131,9 @@ public class DashboardService {
         dto.setAvatar(student.getAvatar());
         dto.setTotalEarnedScore(studentAnswerRepository.sumMaxEarnedScorePerTopicByStudentId(student.getId()));
 
-        Optional<StudentRank> rankOpt = studentRankRepository.findByStudent(student);
-        if (rankOpt.isPresent()) {
-            StudentRank rank = rankOpt.get();
-            dto.setTotalStars(rank.getTotalStars() != null ? rank.getTotalStars() : 0);
-            dto.setRankName(rank.getRankName() != null ? rank.getRankName().name() : null);
-        } else {
-            dto.setTotalStars(studentScoreRepository.sumStarsByStudent(student));
-            dto.setRankName(null);
-        }
+        int totalStars = studentScoreRepository.sumStarsByStudent(student);
+        dto.setTotalStars(totalStars);
+        dto.setRankName(RankLevel.fromTotalStars(totalStars).name());
 
         return dto;
     }

@@ -24,4 +24,6 @@ public class QuestionsDto {
     private Integer timeLimitMinutes;
     private Integer scorePoint;
     private Boolean isAvailable;
+    /** True jika soal sudah punya opsi/relasi/puzzle — tipe soal tidak boleh diubah. */
+    private Boolean questionTypeLocked;
 }

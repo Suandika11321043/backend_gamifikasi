@@ -5,12 +5,17 @@ import com.example.gamifikasi.dto.LearningDateGroupDto;
 import com.example.gamifikasi.dto.QuestionsDto;
 import com.example.gamifikasi.dto.QuestionWithOptionsDto;
 import com.example.gamifikasi.dto.StudentAnswerHistoryDto;
+import com.example.gamifikasi.entity.JigsawPiece;
+import com.example.gamifikasi.entity.JigsawPuzzle;
+import com.example.gamifikasi.entity.MatchingRelation;
+import com.example.gamifikasi.entity.QuestionOptions;
 import com.example.gamifikasi.entity.Questions;
 import com.example.gamifikasi.entity.Topic;
 import com.example.gamifikasi.entity.TopicLearningDate;
 import com.example.gamifikasi.repository.MatchingRelationRepository;
 import com.example.gamifikasi.repository.QuestionOptionsRepository;
 import com.example.gamifikasi.repository.QuestionsRepository;
+import com.example.gamifikasi.repository.JigsawPieceRepository;
 import com.example.gamifikasi.repository.JigsawPuzzleRepository;
 import com.example.gamifikasi.repository.StudentAnswerRepository;
 import com.example.gamifikasi.repository.TopicLearningDateRepository;
@@ -18,10 +23,12 @@ import com.example.gamifikasi.repository.TopicRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +58,9 @@ public class QuestionsService {
 
     @Autowired
     private JigsawPuzzleRepository jigsawPuzzleRepository;
+
+    @Autowired
+    private JigsawPieceRepository jigsawPieceRepository;
 
     @Autowired
     private TopicLearningDateRepository topicLearningDateRepository;
@@ -91,7 +101,31 @@ public class QuestionsService {
                 q.getContentAudio(),
                 q.getTimeLimitMinutes(),
                 q.getScorePoint(),
-                available);
+                available,
+                isQuestionOptionsConfigured(q));
+    }
+
+    /** Soal sudah punya opsi, pasangan, atau puzzle — tipe tidak boleh diganti. */
+    public boolean isQuestionOptionsConfigured(Questions q) {
+        if (q.getId() != null && jigsawPuzzleRepository.existsByQuestionId(q.getId())) {
+            return true;
+        }
+        if (questionOptionsRepository.existsByQuestions(q)) {
+            return true;
+        }
+        return matchingRelationRepository.existsByQuestions(q);
+    }
+
+    private void validateQuestionTypeChange(Questions q, String newType) {
+        String currentType = q.getQuestionType();
+        if (currentType == null || newType == null || currentType.equalsIgnoreCase(newType)) {
+            return;
+        }
+        if (isQuestionOptionsConfigured(q)) {
+            throw new IllegalStateException(
+                    "Tipe soal tidak dapat diubah karena opsi atau konfigurasi sudah diatur. "
+                            + "Hapus semua opsi atau konfigurasi puzzle terlebih dahulu.");
+        }
     }
 
     // Create
@@ -118,6 +152,109 @@ public class QuestionsService {
         getOrCreateLearningDate(topic, learningDate);
         q.setIsAvailable(isLearningDateAvailable(topicId, learningDate));
         return convertToDto(questionsRepository.save(q));
+    }
+
+    /**
+     * Duplikat soal beserta opsi, pasangan (MATCH/DRAG_AND_DROP), urutan (SORTING), dan puzzle.
+     */
+    @Transactional
+    public QuestionsDto duplicateQuestion(Long sourceId, Long topicId, LocalDate learningDate) {
+        Questions source = questionsRepository.findById(sourceId)
+                .orElseThrow(() -> new RuntimeException("Soal tidak ditemukan: " + sourceId));
+        validateScorePoint(source.getScorePoint());
+
+        Topic topic = topicRepository.findById(topicId)
+                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+
+        Questions copy = new Questions();
+        copy.setTopic(topic);
+        copy.setLearningDate(learningDate);
+        copy.setQuestionType(source.getQuestionType());
+        copy.setContentInstruction(source.getContentInstruction());
+        copy.setContentImage(source.getContentImage());
+        copy.setContentAudio(source.getContentAudio());
+        copy.setTimeLimitMinutes(source.getTimeLimitMinutes());
+        copy.setScorePoint(source.getScorePoint());
+        getOrCreateLearningDate(topic, learningDate);
+        copy.setIsAvailable(isLearningDateAvailable(topicId, learningDate));
+
+        Questions saved = questionsRepository.save(copy);
+        copyQuestionAttachments(source, saved);
+        return convertToDto(saved);
+    }
+
+    private void copyQuestionAttachments(Questions source, Questions target) {
+        String qType = source.getQuestionType() != null ? source.getQuestionType() : "QUIZ";
+        if ("PUZZLE".equalsIgnoreCase(qType)) {
+            copyPuzzleAttachment(source, target);
+            return;
+        }
+
+        Map<Long, Long> optionIdMap = copyQuestionOptions(source, target);
+        if (needsMatchingRelations(qType)) {
+            copyMatchingRelations(source, target, optionIdMap);
+        }
+    }
+
+    private boolean needsMatchingRelations(String questionType) {
+        return "MATCH".equalsIgnoreCase(questionType)
+                || "MATCHING".equalsIgnoreCase(questionType)
+                || "DRAG_AND_DROP".equalsIgnoreCase(questionType);
+    }
+
+    private Map<Long, Long> copyQuestionOptions(Questions source, Questions target) {
+        Map<Long, Long> idMap = new HashMap<>();
+        for (QuestionOptions src : questionOptionsRepository.findByQuestions(source)) {
+            QuestionOptions opt = new QuestionOptions();
+            opt.setQuestions(target);
+            opt.setTeksOpsi(src.getTeksOpsi());
+            opt.setMediaOpsi(src.getMediaOpsi());
+            opt.setKunciJawaban(src.getKunciJawaban() != null ? src.getKunciJawaban() : false);
+            opt.setUrutanBenar(src.getUrutanBenar());
+            opt.setTipeItem(src.getTipeItem() != null ? src.getTipeItem() : QuestionOptions.TipeItem.JAWABAN);
+            QuestionOptions saved = questionOptionsRepository.save(opt);
+            idMap.put(src.getId(), saved.getId());
+        }
+        return idMap;
+    }
+
+    private void copyMatchingRelations(Questions source, Questions target, Map<Long, Long> optionIdMap) {
+        for (MatchingRelation rel : matchingRelationRepository.findByQuestions(source)) {
+            if (rel.getOpsiPertanyaan() == null || rel.getOpsiJawaban() == null) {
+                continue;
+            }
+            Long newLeftId = optionIdMap.get(rel.getOpsiPertanyaan().getId());
+            Long newRightId = optionIdMap.get(rel.getOpsiJawaban().getId());
+            if (newLeftId == null || newRightId == null) {
+                continue;
+            }
+
+            MatchingRelation copy = new MatchingRelation();
+            copy.setQuestions(target);
+            copy.setOpsiPertanyaan(questionOptionsRepository.findById(newLeftId).orElse(null));
+            copy.setOpsiJawaban(questionOptionsRepository.findById(newRightId).orElse(null));
+            matchingRelationRepository.save(copy);
+        }
+    }
+
+    private void copyPuzzleAttachment(Questions source, Questions target) {
+        jigsawPuzzleRepository.findByQuestion(source).ifPresent(puzzle -> {
+            JigsawPuzzle copy = new JigsawPuzzle();
+            copy.setQuestion(target);
+            copy.setImageUrl(puzzle.getImageUrl());
+            copy.setGridRows(puzzle.getGridRows());
+            copy.setGridCols(puzzle.getGridCols());
+            JigsawPuzzle savedPuzzle = jigsawPuzzleRepository.save(copy);
+
+            for (JigsawPiece piece : jigsawPieceRepository.findByPuzzle(puzzle)) {
+                JigsawPiece pieceCopy = new JigsawPiece();
+                pieceCopy.setPuzzle(savedPuzzle);
+                pieceCopy.setPieceIndex(piece.getPieceIndex());
+                pieceCopy.setCorrectPosition(piece.getCorrectPosition());
+                pieceCopy.setPieceImageUrl(piece.getPieceImageUrl());
+                jigsawPieceRepository.save(pieceCopy);
+            }
+        });
     }
 
     // Get All
@@ -171,6 +308,7 @@ public class QuestionsService {
         Topic topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
         Questions q = existingOpt.get();
+        validateQuestionTypeChange(q, questionType);
         q.setTopic(topic);
         q.setLearningDate(learningDate);
         q.setQuestionType(questionType);
@@ -212,6 +350,12 @@ public class QuestionsService {
             boolean dateAvailable = q.getLearningDate() != null
                     && isLearningDateAvailable(qTopicId, q.getLearningDate());
             boolean done = studentAnswerRepository.existsByStudentIdAndQuestionsId(studentId, q.getId());
+            Boolean correct = null;
+            if (done) {
+                correct = studentAnswerRepository.findTopByStudentIdAndQuestionsIdOrderByIdDesc(studentId, q.getId())
+                        .map(sa -> Boolean.TRUE.equals(sa.getIsCorrect()))
+                        .orElse(false);
+            }
             LearningDateGroupDto.QuestionWithStatusDto dto = new LearningDateGroupDto.QuestionWithStatusDto(
                     q.getId(),
                     qTopicId,
@@ -223,15 +367,22 @@ public class QuestionsService {
                     q.getTimeLimitMinutes(),
                     q.getScorePoint(),
                     dateAvailable,
+                    correct,
                     done ? "SELESAI" : "BELUM");
             grouped.computeIfAbsent(q.getLearningDate(), k -> new java.util.ArrayList<>()).add(dto);
         }
 
         return grouped.entrySet().stream()
-                .map(e -> new LearningDateGroupDto(
-                        e.getKey(),
-                        isLearningDateAvailable(topicId, e.getKey()),
-                        e.getValue()))
+                .map(e -> {
+                    LocalDate date = e.getKey();
+                    int starCount = studentAnswerRepository
+                            .countLatestCorrectByStudentIdAndTopicIdAndLearningDate(studentId, topicId, date);
+                    return new LearningDateGroupDto(
+                            date,
+                            isLearningDateAvailable(topicId, date),
+                            starCount,
+                            e.getValue());
+                })
                 .collect(Collectors.toList());
     }
 
