@@ -19,4 +19,6 @@ public interface StudentScoreRepository extends JpaRepository<StudentScore, Long
 
     @Query("SELECT COALESCE(SUM(s.starCount), 0) FROM StudentScore s WHERE s.student = :student")
     int sumStarsByStudent(@Param("student") Student student);
+
+    void deleteByStudent(Student student);
 }

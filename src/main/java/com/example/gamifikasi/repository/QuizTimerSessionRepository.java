@@ -14,4 +14,8 @@ public interface QuizTimerSessionRepository extends JpaRepository<QuizTimerSessi
     List<QuizTimerSession> findByStudentIdAndTopicId(Long studentId, Long topicId);
 
     void deleteByStudentIdAndTopicId(Long studentId, Long topicId);
+
+    void deleteByStudentIdAndTopicIdAndQuestionId(Long studentId, Long topicId, Long questionId);
+
+    void deleteByStudentId(Long studentId);
 }

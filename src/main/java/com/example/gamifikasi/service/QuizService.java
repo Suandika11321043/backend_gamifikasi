@@ -45,7 +45,7 @@ public class QuizService {
     private StudentScoreRepository studentScoreRepository;
 
     @Autowired
-    private StudentRankRepository studentRankRepository;
+    private StudentDayScoreRepository studentDayScoreRepository;
 
     @Autowired
     private QuestionsService questionsService;
@@ -87,7 +87,14 @@ public class QuizService {
                         o.getTeksOpsi(),
                         o.getMediaOpsi(),
                         o.getTipeItem() != null ? o.getTipeItem().name() : null))
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        if (q.getQuestionType() != null) {
+            String type = q.getQuestionType().toUpperCase();
+            if ("SORTING".equals(type) || "ORDERING".equals(type)) {
+                Collections.shuffle(options);
+            }
+        }
 
         return new QuestionWithOptionsDto(
                 q.getId(),
@@ -150,42 +157,83 @@ public class QuizService {
         Topic topic = topicRepository.findById(request.getTopicId())
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + request.getTopicId()));
 
-        int correctCount = request.getCorrectCount() != null ? request.getCorrectCount() : 0;
+        int sessionCorrect = request.getCorrectCount() != null ? request.getCorrectCount() : 0;
         int totalQuestions = request.getTotalQuestions() != null ? request.getTotalQuestions() : 0;
-        int newStars = calculateStars(correctCount, totalQuestions);
+        java.time.LocalDate learningDate = request.getLearningDate();
 
-        // Hitung total score sesi ini dari StudentAnswer (server-side, tidak bergantung
-        // frontend)
-        int sessionEarnedScore = studentAnswerRepository
+        int dayCorrectCount;
+        int dayEarnedScore;
+        if (learningDate != null) {
+            dayCorrectCount = studentAnswerRepository
+                    .countLatestCorrectByStudentIdAndTopicIdAndLearningDate(
+                            student.getId(), topic.getId(), learningDate);
+            dayEarnedScore = studentAnswerRepository
+                    .sumLatestEarnedScoreByStudentIdAndTopicIdAndLearningDate(
+                            student.getId(), topic.getId(), learningDate);
+        } else {
+            dayCorrectCount = sessionCorrect;
+            dayEarnedScore = request.getTotalEarnedScore() != null ? request.getTotalEarnedScore() : 0;
+        }
+
+        boolean improved = false;
+        if (learningDate != null) {
+            StudentDayScore dayScore = studentDayScoreRepository
+                    .findByStudentAndTopicAndLearningDate(student, topic, learningDate)
+                    .orElse(new StudentDayScore());
+            int previousDayStars = dayScore.getStarCount() != null ? dayScore.getStarCount() : 0;
+            int previousDayScore = dayScore.getTotalEarnedScore() != null ? dayScore.getTotalEarnedScore() : 0;
+            improved = dayCorrectCount > previousDayStars || dayEarnedScore > previousDayScore;
+
+            dayScore.setStudent(student);
+            dayScore.setTopic(topic);
+            dayScore.setLearningDate(learningDate);
+            dayScore.setCorrectCount(dayCorrectCount);
+            dayScore.setStarCount(dayCorrectCount);
+            dayScore.setTotalEarnedScore(dayEarnedScore);
+            studentDayScoreRepository.save(dayScore);
+        }
+
+        int topicCorrectCount = studentAnswerRepository
+                .countLatestCorrectByStudentIdAndTopicId(student.getId(), topic.getId());
+
+        int topicEarnedScore = studentAnswerRepository
                 .sumLatestEarnedScoreByStudentIdAndTopicId(student.getId(), topic.getId());
 
         StudentScore score = studentScoreRepository
                 .findByStudentAndTopic(student, topic)
                 .orElse(new StudentScore());
 
-        boolean improved = score.getStarCount() == null || newStars > score.getStarCount();
+        int previousTopicStars = score.getStarCount() != null ? score.getStarCount() : 0;
         int currentBestScore = score.getTotalEarnedScore() != null ? score.getTotalEarnedScore() : 0;
-        int bestEarnedScore = Math.max(currentBestScore, sessionEarnedScore);
+        if (!improved) {
+            improved = topicCorrectCount > previousTopicStars || topicEarnedScore > currentBestScore;
+        }
 
         score.setStudent(student);
         score.setTopic(topic);
-        score.setTotalEarnedScore(bestEarnedScore);
-        if (improved) {
-            score.setCorrectCount(correctCount);
-            score.setStarCount(newStars);
-        }
+        score.setTotalEarnedScore(topicEarnedScore);
+        score.setCorrectCount(topicCorrectCount);
+        score.setStarCount(topicCorrectCount);
         studentScoreRepository.save(score);
 
-        StudentRank rank = updateStudentRank(student);
+        int totalStars = studentDayScoreRepository.sumStarsByStudent(student);
+        if (totalStars == 0) {
+            totalStars = studentScoreRepository.sumStarsByStudent(student);
+        }
+        RankLevel rankLevel = RankLevel.fromTotalStars(totalStars);
+
+        int starsEarned = learningDate != null ? dayCorrectCount : sessionCorrect;
+        int earnedScoreForResponse = learningDate != null ? dayEarnedScore
+                : (request.getTotalEarnedScore() != null ? request.getTotalEarnedScore() : topicEarnedScore);
 
         return new QuizResultResponse(
-                correctCount,
+                learningDate != null ? dayCorrectCount : sessionCorrect,
                 totalQuestions,
-                newStars,
+                starsEarned,
                 improved,
-                rank.getTotalStars(),
-                rank.getRankName(),
-                sessionEarnedScore,
+                totalStars,
+                rankLevel,
+                earnedScoreForResponse,
                 null);
     }
 
@@ -246,36 +294,37 @@ public class QuizService {
             details.add(new AnswerResultDto(answerReq.getQuestionId(), isCorrect, earnedScore));
         }
 
-        int newStars = calculateStars(correctCount, totalQuestions);
+        int newStars = correctCount;
 
-        // Update StudentScore – hanya simpan jika lebih baik dari skor sebelumnya
         StudentScore score = studentScoreRepository
                 .findByStudentAndTopic(student, topic)
                 .orElse(new StudentScore());
 
-        boolean improved = score.getStarCount() == null || newStars > score.getStarCount();
+        int topicCorrectCount = studentAnswerRepository
+                .countLatestCorrectByStudentIdAndTopicId(student.getId(), topic.getId());
+
+        int previousStars = score.getStarCount() != null ? score.getStarCount() : 0;
         int currentBestScore = score.getTotalEarnedScore() != null ? score.getTotalEarnedScore() : 0;
         int bestEarnedScore = Math.max(currentBestScore, totalEarnedScore);
+        boolean improved = topicCorrectCount > previousStars || bestEarnedScore > currentBestScore;
 
         score.setStudent(student);
         score.setTopic(topic);
         score.setTotalEarnedScore(bestEarnedScore);
-        if (improved) {
-            score.setCorrectCount(correctCount);
-            score.setStarCount(newStars);
-        }
+        score.setCorrectCount(topicCorrectCount);
+        score.setStarCount(topicCorrectCount);
         studentScoreRepository.save(score);
 
-        // Update StudentRank
-        StudentRank rank = updateStudentRank(student);
+        int totalStars = studentScoreRepository.sumStarsByStudent(student);
+        RankLevel rankLevel = RankLevel.fromTotalStars(totalStars);
 
         return new QuizResultResponse(
                 correctCount,
                 totalQuestions,
                 newStars,
                 improved,
-                rank.getTotalStars(),
-                rank.getRankName(),
+                totalStars,
+                rankLevel,
                 totalEarnedScore,
                 details);
     }
@@ -327,26 +376,29 @@ public class QuizService {
         return studentScoreRepository.findByStudent(student);
     }
 
-    public Optional<StudentScore> getScoreByStudentAndTopic(Long studentId, Long topicId) {
+    public StudentScore getScoreByStudentAndTopic(Long studentId, Long topicId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan: " + studentId));
         Topic topic = topicRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
-        return studentScoreRepository.findByStudentAndTopic(student, topic);
-    }
 
-    // ────────────────────────────────────────────────────────────
-    // CRUD: StudentRank
-    // ────────────────────────────────────────────────────────────
+        int correctCount = studentAnswerRepository
+                .countLatestCorrectByStudentIdAndTopicId(studentId, topicId);
+        int earnedScore = studentAnswerRepository
+                .sumLatestEarnedScoreByStudentIdAndTopicId(studentId, topicId);
+        int dayStars = studentDayScoreRepository.sumStarsByStudentAndTopic(student, topic);
+        int starCount = Math.max(correctCount, dayStars);
 
-    public Optional<StudentRank> getRankByStudent(Long studentId) {
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan: " + studentId));
-        return studentRankRepository.findByStudent(student);
-    }
+        StudentScore score = studentScoreRepository
+                .findByStudentAndTopic(student, topic)
+                .orElse(new StudentScore());
 
-    public List<StudentRank> getAllRanks() {
-        return studentRankRepository.findAll();
+        score.setStudent(student);
+        score.setTopic(topic);
+        score.setCorrectCount(correctCount);
+        score.setStarCount(starCount);
+        score.setTotalEarnedScore(earnedScore);
+        return score;
     }
 
     // ────────────────────────────────────────────────────────────
@@ -637,43 +689,5 @@ public class QuizService {
         log.info("[MATCHING] questionId={} correctPairs={} submitted={}", question.getId(), correctPairs,
                 submittedPairs);
         return submittedPairs.equals(correctPairs);
-    }
-
-    // ────────────────────────────────────────────────────────────
-    // Helper: kalkulasi bintang dan update rank
-    // ────────────────────────────────────────────────────────────
-
-    /**
-     * Hitung bintang berdasarkan persentase jawaban benar:
-     * >= 80% → 3 bintang
-     * >= 60% → 2 bintang
-     * >= 40% → 1 bintang
-     * < 40% → 0 bintang
-     */
-    private int calculateStars(int correct, int total) {
-        if (total == 0)
-            return 0;
-        double pct = (double) correct / total * 100.0;
-        if (pct >= 80)
-            return 3;
-        if (pct >= 60)
-            return 2;
-        if (pct >= 40)
-            return 1;
-        return 0;
-    }
-
-    /**
-     * Hitung ulang total bintang dari semua topik lalu perbarui StudentRank.
-     */
-    private StudentRank updateStudentRank(Student student) {
-        int totalStars = studentScoreRepository.sumStarsByStudent(student);
-
-        StudentRank rank = studentRankRepository.findByStudent(student)
-                .orElse(new StudentRank());
-        rank.setStudent(student);
-        rank.setTotalStars(totalStars);
-        rank.setRankName(RankLevel.fromTotalStars(totalStars));
-        return studentRankRepository.save(rank);
     }
 }

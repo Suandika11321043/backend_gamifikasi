@@ -24,6 +24,9 @@ public class LearningDateGroupDto {
     /** Ketersediaan soal untuk tanggal ini (diatur per learning date, bukan per soal). */
     private Boolean isAvailable;
 
+    /** Jumlah soal yang dijawab benar pada tanggal ini. */
+    private Integer starCount;
+
     private List<QuestionWithStatusDto> questions;
 
     @Getter
@@ -41,6 +44,8 @@ public class LearningDateGroupDto {
         private Integer timeLimitMinutes;
         private Integer scorePoint;
         private Boolean isAvailable;
+        /** null jika belum dijawab; true/false jika sudah selesai. */
+        private Boolean correct;
         /**
          * "SELESAI"  → siswa sudah mengerjakan soal ini
          * "BELUM"    → siswa belum mengerjakan soal ini

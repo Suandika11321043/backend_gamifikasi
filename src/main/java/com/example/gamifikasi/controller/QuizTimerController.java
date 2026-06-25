@@ -48,4 +48,14 @@ public class QuizTimerController {
         quizTimerService.clearTimers(studentId, topicId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+    /** Hapus timer satu soal setelah jawaban dikirim. */
+    @DeleteMapping("/{studentId}/{topicId}/{questionId}")
+    public ResponseEntity<Void> clearTimer(
+            @PathVariable Long studentId,
+            @PathVariable Long topicId,
+            @PathVariable Long questionId) {
+        quizTimerService.clearTimer(studentId, topicId, questionId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }

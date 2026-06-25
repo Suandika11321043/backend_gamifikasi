@@ -1,7 +1,6 @@
 package com.example.gamifikasi.controller;
 
 import com.example.gamifikasi.dto.*;
-import com.example.gamifikasi.entity.StudentRank;
 import com.example.gamifikasi.entity.StudentScore;
 import com.example.gamifikasi.service.QuizService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +19,6 @@ import java.util.List;
  *  POST /api/quiz/submit                              → (legacy) submit semua jawaban sekaligus
  *  GET  /api/quiz/scores/students/{studentId}         → semua skor siswa
  *  GET  /api/quiz/scores/students/{studentId}/topics/{topicId} → skor per topik
- *  GET  /api/quiz/ranks                               → leaderboard semua rank
- *  GET  /api/quiz/ranks/students/{studentId}          → rank satu siswa
  */
 @RestController
 @RequestMapping("/api/quiz")
@@ -77,7 +74,7 @@ public class QuizController {
 
     /**
      * Dipanggil setelah semua soal selesai dijawab satu-per-satu.
-     * Hitung bintang, update StudentScore & StudentRank, kembalikan hasil akhir.
+     * Hitung bintang, update StudentScore, kembalikan hasil akhir.
      */
     @PostMapping("/finish")
     public ResponseEntity<QuizResultResponse> finishQuiz(
@@ -146,23 +143,6 @@ public class QuizController {
     public ResponseEntity<StudentScore> getScoreByStudentAndTopic(
             @PathVariable Long studentId,
             @PathVariable Long topicId) {
-        return quizService.getScoreByStudentAndTopic(studentId, topicId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // ─── Rank ─────────────────────────────────────────────────────
-
-    @GetMapping("/ranks")
-    public ResponseEntity<List<StudentRank>> getAllRanks() {
-        return ResponseEntity.ok(quizService.getAllRanks());
-    }
-
-    @GetMapping("/ranks/students/{studentId}")
-    public ResponseEntity<StudentRank> getRankByStudent(
-            @PathVariable Long studentId) {
-        return quizService.getRankByStudent(studentId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(quizService.getScoreByStudentAndTopic(studentId, topicId));
     }
 }

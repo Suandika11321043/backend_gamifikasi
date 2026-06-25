@@ -60,6 +60,23 @@ public class QuestionsController {
         }
     }
 
+    // Duplicate Question (beserta opsi / pasangan / puzzle)
+    @PostMapping("/{id}/duplicate")
+    public ResponseEntity<QuestionsDto> duplicateQuestion(
+            @PathVariable Long id,
+            @RequestParam Long topicId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate learningDate) {
+        try {
+            return new ResponseEntity<>(
+                    questionsService.duplicateQuestion(id, topicId, learningDate),
+                    HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName(), e);
+        }
+    }
+
     // Get All Questions
     @GetMapping
     public ResponseEntity<List<QuestionsDto>> getAllQuestions() {

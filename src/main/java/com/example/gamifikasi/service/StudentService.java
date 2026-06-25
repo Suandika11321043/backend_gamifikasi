@@ -1,15 +1,17 @@
 package com.example.gamifikasi.service;
 
 import com.example.gamifikasi.dto.StudentDto;
+import com.example.gamifikasi.entity.RankLevel;
 import com.example.gamifikasi.entity.Student;
-import com.example.gamifikasi.entity.StudentRank;
 import com.example.gamifikasi.repository.StudentAnswerRepository;
-import com.example.gamifikasi.repository.StudentRankRepository;
+import com.example.gamifikasi.repository.StudentDayScoreRepository;
 import com.example.gamifikasi.repository.StudentRepository;
 import com.example.gamifikasi.repository.StudentScoreRepository;
+import com.example.gamifikasi.repository.QuizTimerSessionRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -33,7 +35,10 @@ public class StudentService {
     private StudentScoreRepository studentScoreRepository;
 
     @Autowired
-    private StudentRankRepository studentRankRepository;
+    private StudentDayScoreRepository studentDayScoreRepository;
+
+    @Autowired
+    private QuizTimerSessionRepository quizTimerSessionRepository;
 
     private StudentDto convertToDto(Student student) {
         StudentDto dto = new StudentDto();
@@ -45,16 +50,13 @@ public class StudentService {
         // Total earned score: jumlah skor tertinggi per topik
         dto.setTotalEarnedScore(studentAnswerRepository.sumMaxEarnedScorePerTopicByStudentId(student.getId()));
 
-        // Total bintang dan rank dari student_rank
-        Optional<StudentRank> rankOpt = studentRankRepository.findByStudent(student);
-        if (rankOpt.isPresent()) {
-            StudentRank rank = rankOpt.get();
-            dto.setTotalStars(rank.getTotalStars() != null ? rank.getTotalStars() : 0);
-            dto.setRankName(rank.getRankName() != null ? rank.getRankName().name() : null);
-        } else {
-            dto.setTotalStars(studentScoreRepository.sumStarsByStudent(student));
-            dto.setRankName(null);
+        // Total bintang = jumlah bintang per hari (semua topik)
+        int totalStars = studentDayScoreRepository.sumStarsByStudent(student);
+        if (totalStars == 0) {
+            totalStars = studentScoreRepository.sumStarsByStudent(student);
         }
+        dto.setTotalStars(totalStars);
+        dto.setRankName(RankLevel.fromTotalStars(totalStars).name());
 
         return dto;
     }
@@ -115,16 +117,22 @@ public class StudentService {
         return Optional.of(convertToDto(updated));
     }
 
-    // Delete Student
+    // Delete Student beserta jawaban, skor, dan data terkait
+    @Transactional
     public boolean deleteStudent(Long id) {
         return studentRepository.findById(id)
                 .map(student -> {
+                    Long studentId = student.getId();
+                    quizTimerSessionRepository.deleteByStudentId(studentId);
+                    studentAnswerRepository.deleteByStudentId(studentId);
+                    studentDayScoreRepository.deleteByStudent(student);
+                    studentScoreRepository.deleteByStudent(student);
                     try {
                         fileStorageUtil.deleteFile(student.getAvatar());
                     } catch (IOException e) {
                         // log but continue with deletion
                     }
-                    studentRepository.deleteById(id);
+                    studentRepository.delete(student);
                     return true;
                 })
                 .orElse(false);

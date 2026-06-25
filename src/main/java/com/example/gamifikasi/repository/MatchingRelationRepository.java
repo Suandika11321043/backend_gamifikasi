@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface MatchingRelationRepository extends JpaRepository<MatchingRelation, Long> {
     List<MatchingRelation> findByQuestions(Questions questions);
+    boolean existsByQuestions(Questions questions);
 }

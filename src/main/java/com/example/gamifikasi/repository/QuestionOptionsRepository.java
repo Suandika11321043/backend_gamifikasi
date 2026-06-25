@@ -11,4 +11,5 @@ import java.util.List;
 public interface QuestionOptionsRepository extends JpaRepository<QuestionOptions, Long> {
     List<QuestionOptions> findByQuestions(Questions questions);
     List<QuestionOptions> findByQuestionsAndTipeItem(Questions questions, QuestionOptions.TipeItem tipeItem);
+    boolean existsByQuestions(Questions questions);
 }

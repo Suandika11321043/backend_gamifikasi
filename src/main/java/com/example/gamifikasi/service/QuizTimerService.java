@@ -48,6 +48,11 @@ public class QuizTimerService {
         repository.deleteByStudentIdAndTopicId(studentId, topicId);
     }
 
+    @Transactional
+    public void clearTimer(Long studentId, Long topicId, Long questionId) {
+        repository.deleteByStudentIdAndTopicIdAndQuestionId(studentId, topicId, questionId);
+    }
+
     private QuizTimerDto toDto(QuizTimerSession s) {
         return new QuizTimerDto(
                 s.getStudentId(),

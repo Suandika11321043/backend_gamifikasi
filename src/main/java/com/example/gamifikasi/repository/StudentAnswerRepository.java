@@ -66,4 +66,48 @@ public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Lo
             "  GROUP BY sa2.id_question" +
             ")", nativeQuery = true)
     int sumLatestEarnedScoreByStudentIdAndTopicId(@Param("studentId") Long studentId, @Param("topicId") Long topicId);
+
+    /** Jumlah soal dijawab benar (jawaban terbaru per soal) dalam satu topik. */
+    @Query(value = "SELECT COALESCE(SUM(CASE WHEN sa.is_correct = 1 THEN 1 ELSE 0 END), 0) FROM student_answer sa " +
+            "JOIN questions q ON sa.id_question = q.ID " +
+            "WHERE sa.id_student = :studentId AND q.topic_id = :topicId " +
+            "AND sa.id IN (" +
+            "  SELECT MAX(sa2.id) FROM student_answer sa2 " +
+            "  JOIN questions q2 ON sa2.id_question = q2.ID " +
+            "  WHERE sa2.id_student = :studentId AND q2.topic_id = :topicId " +
+            "  GROUP BY sa2.id_question" +
+            ")", nativeQuery = true)
+    int countLatestCorrectByStudentIdAndTopicId(@Param("studentId") Long studentId, @Param("topicId") Long topicId);
+
+    /** Jumlah soal benar (jawaban terbaru per soal) pada satu tanggal belajar dalam topik. */
+    @Query(value = "SELECT COALESCE(SUM(CASE WHEN sa.is_correct = 1 THEN 1 ELSE 0 END), 0) FROM student_answer sa " +
+            "JOIN questions q ON sa.id_question = q.ID " +
+            "WHERE sa.id_student = :studentId AND q.topic_id = :topicId AND q.learning_date = :learningDate " +
+            "AND sa.id IN (" +
+            "  SELECT MAX(sa2.id) FROM student_answer sa2 " +
+            "  JOIN questions q2 ON sa2.id_question = q2.ID " +
+            "  WHERE sa2.id_student = :studentId AND q2.topic_id = :topicId AND q2.learning_date = :learningDate " +
+            "  GROUP BY sa2.id_question" +
+            ")", nativeQuery = true)
+    int countLatestCorrectByStudentIdAndTopicIdAndLearningDate(
+            @Param("studentId") Long studentId,
+            @Param("topicId") Long topicId,
+            @Param("learningDate") java.time.LocalDate learningDate);
+
+    /** Total poin dari jawaban terbaru per soal pada satu tanggal belajar dalam topik. */
+    @Query(value = "SELECT COALESCE(SUM(sa.earned_score), 0) FROM student_answer sa " +
+            "JOIN questions q ON sa.id_question = q.ID " +
+            "WHERE sa.id_student = :studentId AND q.topic_id = :topicId AND q.learning_date = :learningDate " +
+            "AND sa.id IN (" +
+            "  SELECT MAX(sa2.id) FROM student_answer sa2 " +
+            "  JOIN questions q2 ON sa2.id_question = q2.ID " +
+            "  WHERE sa2.id_student = :studentId AND q2.topic_id = :topicId AND q2.learning_date = :learningDate " +
+            "  GROUP BY sa2.id_question" +
+            ")", nativeQuery = true)
+    int sumLatestEarnedScoreByStudentIdAndTopicIdAndLearningDate(
+            @Param("studentId") Long studentId,
+            @Param("topicId") Long topicId,
+            @Param("learningDate") java.time.LocalDate learningDate);
+
+    void deleteByStudentId(Long studentId);
 }
