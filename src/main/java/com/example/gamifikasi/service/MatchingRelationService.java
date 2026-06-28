@@ -9,6 +9,7 @@ import com.example.gamifikasi.repository.QuestionOptionsRepository;
 import com.example.gamifikasi.repository.QuestionsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,7 @@ public class MatchingRelationService {
     }
 
     // Create
+    @Transactional
     public MatchingRelationDto createRelation(Long questionId, Long opsiPertanyaanId, Long opsiJawabanId) {
         Questions question = questionsRepository.findById(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("Soal tidak ditemukan: " + questionId));
@@ -76,6 +78,7 @@ public class MatchingRelationService {
     }
 
     // Update
+    @Transactional
     public Optional<MatchingRelationDto> updateRelation(Long id, Long questionId, Long opsiPertanyaanId, Long opsiJawabanId) {
         Optional<MatchingRelation> existingOpt = matchingRelationRepository.findById(id);
         if (existingOpt.isEmpty()) return Optional.empty();
@@ -98,6 +101,7 @@ public class MatchingRelationService {
     }
 
     // Delete
+    @Transactional
     public boolean deleteRelation(Long id) {
         if (matchingRelationRepository.existsById(id)) {
             matchingRelationRepository.deleteById(id);

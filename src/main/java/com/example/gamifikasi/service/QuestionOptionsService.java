@@ -8,6 +8,7 @@ import com.example.gamifikasi.repository.QuestionsRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -40,6 +41,7 @@ public class QuestionOptionsService {
     }
 
     // Create
+    @Transactional
     public QuestionOptionsDto createOption(Long questionId, String teksOpsi, MultipartFile mediaOpsiFile,
                                            Boolean kunciJawaban, Integer urutanBenar,
                                            QuestionOptions.TipeItem tipeItem) throws IOException {
@@ -80,6 +82,7 @@ public class QuestionOptionsService {
     }
 
     // Update
+    @Transactional
     public Optional<QuestionOptionsDto> updateOption(Long id, Long questionId, String teksOpsi,
                                                       MultipartFile mediaOpsiFile, Boolean kunciJawaban,
                                                       Integer urutanBenar, QuestionOptions.TipeItem tipeItem) throws IOException {
@@ -103,6 +106,7 @@ public class QuestionOptionsService {
     }
 
     // Delete
+    @Transactional
     public boolean deleteOption(Long id) {
         return questionOptionsRepository.findById(id)
                 .map(opt -> {

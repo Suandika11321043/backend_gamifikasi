@@ -1,8 +1,8 @@
 package com.example.gamifikasi.service;
 
 import com.example.gamifikasi.dto.QuizTimerDto;
-import com.example.gamifikasi.entity.QuizTimerSession;
-import com.example.gamifikasi.repository.QuizTimerSessionRepository;
+import com.example.gamifikasi.entity.QuestionTimerSession;
+import com.example.gamifikasi.repository.QuestionTimerSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,14 +14,14 @@ import java.util.Optional;
 public class QuizTimerService {
 
     @Autowired
-    private QuizTimerSessionRepository repository;
+    private QuestionTimerSessionRepository repository;
 
     /** Simpan (atau perbarui) sisa waktu untuk satu soal. */
     @Transactional
     public QuizTimerDto saveTimer(QuizTimerDto dto) {
-        QuizTimerSession session = repository
+        QuestionTimerSession session = repository
                 .findByStudentIdAndTopicIdAndQuestionId(dto.getStudentId(), dto.getTopicId(), dto.getQuestionId())
-                .orElse(new QuizTimerSession());
+                .orElse(new QuestionTimerSession());
 
         session.setStudentId(dto.getStudentId());
         session.setTopicId(dto.getTopicId());
@@ -29,7 +29,7 @@ public class QuizTimerService {
         session.setRemainingSeconds(dto.getRemainingSeconds());
         session.setUpdatedAt(LocalDateTime.now());
 
-        QuizTimerSession saved = repository.save(session);
+        QuestionTimerSession saved = repository.save(session);
         return toDto(saved);
     }
 
@@ -53,7 +53,7 @@ public class QuizTimerService {
         repository.deleteByStudentIdAndTopicIdAndQuestionId(studentId, topicId, questionId);
     }
 
-    private QuizTimerDto toDto(QuizTimerSession s) {
+    private QuizTimerDto toDto(QuestionTimerSession s) {
         return new QuizTimerDto(
                 s.getStudentId(),
                 s.getTopicId(),

@@ -15,5 +15,4 @@ public class StudentLeaderboardDto {
     private String avatar;
     private Integer totalEarnedScore;
     private Integer totalStars;
-    private String rankName;
 }

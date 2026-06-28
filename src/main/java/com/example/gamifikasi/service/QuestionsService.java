@@ -10,16 +10,14 @@ import com.example.gamifikasi.entity.JigsawPuzzle;
 import com.example.gamifikasi.entity.MatchingRelation;
 import com.example.gamifikasi.entity.QuestionOptions;
 import com.example.gamifikasi.entity.Questions;
-import com.example.gamifikasi.entity.Topic;
-import com.example.gamifikasi.entity.TopicLearningDate;
+import com.example.gamifikasi.entity.Tema;
 import com.example.gamifikasi.repository.MatchingRelationRepository;
 import com.example.gamifikasi.repository.QuestionOptionsRepository;
 import com.example.gamifikasi.repository.QuestionsRepository;
 import com.example.gamifikasi.repository.JigsawPieceRepository;
 import com.example.gamifikasi.repository.JigsawPuzzleRepository;
 import com.example.gamifikasi.repository.StudentAnswerRepository;
-import com.example.gamifikasi.repository.TopicLearningDateRepository;
-import com.example.gamifikasi.repository.TopicRepository;
+import com.example.gamifikasi.repository.TemaRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,7 +40,7 @@ public class QuestionsService {
     private QuestionsRepository questionsRepository;
 
     @Autowired
-    private TopicRepository topicRepository;
+    private TemaRepository temaRepository;
 
     @Autowired
     private FileStorageUtil fileStorageUtil;
@@ -62,35 +60,21 @@ public class QuestionsService {
     @Autowired
     private JigsawPieceRepository jigsawPieceRepository;
 
-    @Autowired
-    private TopicLearningDateRepository topicLearningDateRepository;
-
     public boolean isLearningDateAvailable(Long topicId, LocalDate learningDate) {
-        return topicLearningDateRepository.findByTopicIdAndLearningDate(topicId, learningDate)
-                .map(tld -> Boolean.TRUE.equals(tld.getIsAvailable()))
-                .orElseGet(() -> {
-                    Topic topic = topicRepository.findById(topicId).orElse(null);
-                    if (topic == null) return false;
-                    List<Questions> qs = questionsRepository.findByTopicAndLearningDate(topic, learningDate);
-                    return !qs.isEmpty() && qs.stream().allMatch(q -> Boolean.TRUE.equals(q.getIsAvailable()));
-                });
+        return temaRepository.findById(topicId)
+                .map(topic -> questionsRepository.findByTopicAndLearningDate(topic, learningDate))
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.stream().anyMatch(q -> Boolean.TRUE.equals(q.getIsAvailable())))
+                .orElse(false);
     }
 
-    private TopicLearningDate getOrCreateLearningDate(Topic topic, LocalDate learningDate) {
-        return topicLearningDateRepository.findByTopicIdAndLearningDate(topic.getId(), learningDate)
-                .orElseGet(() -> {
-                    TopicLearningDate tld = new TopicLearningDate();
-                    tld.setTopic(topic);
-                    tld.setLearningDate(learningDate);
-                    tld.setIsAvailable(false);
-                    return topicLearningDateRepository.save(tld);
-                });
+    private boolean resolveAvailabilityForNewQuestion(Tema topic, LocalDate learningDate) {
+        return questionsRepository.findByTopicAndLearningDate(topic, learningDate).stream()
+                .anyMatch(q -> Boolean.TRUE.equals(q.getIsAvailable()));
     }
 
     private QuestionsDto convertToDto(Questions q) {
         Long topicId = q.getTopic() != null ? q.getTopic().getId() : null;
-        boolean available = topicId != null && q.getLearningDate() != null
-                && isLearningDateAvailable(topicId, q.getLearningDate());
         return new QuestionsDto(
                 q.getId(),
                 topicId,
@@ -101,7 +85,7 @@ public class QuestionsService {
                 q.getContentAudio(),
                 q.getTimeLimitMinutes(),
                 q.getScorePoint(),
-                available,
+                Boolean.TRUE.equals(q.getIsAvailable()),
                 isQuestionOptionsConfigured(q));
     }
 
@@ -129,12 +113,13 @@ public class QuestionsService {
     }
 
     // Create
+    @Transactional
     public QuestionsDto createQuestion(Long topicId, LocalDate learningDate,
             String questionType, String contentInstruction,
             MultipartFile imageFile, MultipartFile audioFile,
             Integer timeLimitMinutes, Integer scorePoint) throws IOException {
         validateScorePoint(scorePoint);
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
         Questions q = new Questions();
         q.setTopic(topic);
@@ -149,8 +134,7 @@ public class QuestionsService {
         if (audioFile != null && !audioFile.isEmpty()) {
             q.setContentAudio(fileStorageUtil.storeFile(audioFile, "questions/audio"));
         }
-        getOrCreateLearningDate(topic, learningDate);
-        q.setIsAvailable(isLearningDateAvailable(topicId, learningDate));
+        q.setIsAvailable(resolveAvailabilityForNewQuestion(topic, learningDate));
         return convertToDto(questionsRepository.save(q));
     }
 
@@ -163,7 +147,7 @@ public class QuestionsService {
                 .orElseThrow(() -> new RuntimeException("Soal tidak ditemukan: " + sourceId));
         validateScorePoint(source.getScorePoint());
 
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
 
         Questions copy = new Questions();
@@ -175,8 +159,7 @@ public class QuestionsService {
         copy.setContentAudio(source.getContentAudio());
         copy.setTimeLimitMinutes(source.getTimeLimitMinutes());
         copy.setScorePoint(source.getScorePoint());
-        getOrCreateLearningDate(topic, learningDate);
-        copy.setIsAvailable(isLearningDateAvailable(topicId, learningDate));
+        copy.setIsAvailable(resolveAvailabilityForNewQuestion(topic, learningDate));
 
         Questions saved = questionsRepository.save(copy);
         copyQuestionAttachments(source, saved);
@@ -271,7 +254,7 @@ public class QuestionsService {
 
     // Get by Topic ID
     public List<QuestionsDto> getQuestionsByTopicId(Long topicId) {
-        return topicRepository.findById(topicId)
+        return temaRepository.findById(topicId)
                 .map(topic -> questionsRepository.findByTopic(topic).stream()
                         .map(this::convertToDto)
                         .collect(Collectors.toList()))
@@ -280,7 +263,7 @@ public class QuestionsService {
 
     // Get by Topic + specific date
     public List<QuestionsDto> getQuestionsByTopicAndDate(Long topicId, LocalDate learningDate) {
-        return topicRepository.findById(topicId)
+        return temaRepository.findById(topicId)
                 .map(topic -> questionsRepository.findByTopicAndLearningDate(topic, learningDate).stream()
                         .map(this::convertToDto)
                         .collect(Collectors.toList()))
@@ -289,7 +272,7 @@ public class QuestionsService {
 
     // Get by Topic + date range (e.g. seluruh bulan: from=2025-06-01, to=2025-06-30)
     public List<QuestionsDto> getQuestionsByTopicAndDateRange(Long topicId, LocalDate from, LocalDate to) {
-        return topicRepository.findById(topicId)
+        return temaRepository.findById(topicId)
                 .map(topic -> questionsRepository.findByTopicAndLearningDateBetween(topic, from, to).stream()
                         .map(this::convertToDto)
                         .collect(Collectors.toList()))
@@ -297,6 +280,7 @@ public class QuestionsService {
     }
 
     // Update
+    @Transactional
     public Optional<QuestionsDto> updateQuestion(Long id, Long topicId, LocalDate learningDate,
             String questionType, String contentInstruction,
             MultipartFile imageFile, MultipartFile audioFile,
@@ -305,10 +289,11 @@ public class QuestionsService {
         Optional<Questions> existingOpt = questionsRepository.findById(id);
         if (existingOpt.isEmpty()) return Optional.empty();
 
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
         Questions q = existingOpt.get();
         validateQuestionTypeChange(q, questionType);
+        LocalDate previousDate = q.getLearningDate();
         q.setTopic(topic);
         q.setLearningDate(learningDate);
         q.setQuestionType(questionType);
@@ -323,12 +308,14 @@ public class QuestionsService {
             fileStorageUtil.deleteFile(q.getContentAudio());
             q.setContentAudio(fileStorageUtil.storeFile(audioFile, "questions/audio"));
         }
-        getOrCreateLearningDate(topic, learningDate);
-        q.setIsAvailable(isLearningDateAvailable(topicId, learningDate));
+        if (previousDate == null || !previousDate.equals(learningDate)) {
+            q.setIsAvailable(resolveAvailabilityForNewQuestion(topic, learningDate));
+        }
         return Optional.of(convertToDto(questionsRepository.save(q)));
     }
 
     // Update timer only
+    @Transactional
     public Optional<QuestionsDto> updateTimerLimit(Long id, Integer timeLimitMinutes) {
         return questionsRepository.findById(id)
                 .map(q -> {
@@ -339,7 +326,7 @@ public class QuestionsService {
 
     // Get by Topic + student status, grouped by learningDate
     public List<LearningDateGroupDto> getQuestionsGroupedByDateWithStatus(Long topicId, Long studentId) {
-        List<Questions> questions = topicRepository.findById(topicId)
+        List<Questions> questions = temaRepository.findById(topicId)
                 .map(topic -> questionsRepository.findByTopic(topic))
                 .orElse(List.of());
 
@@ -347,8 +334,7 @@ public class QuestionsService {
         Map<LocalDate, List<LearningDateGroupDto.QuestionWithStatusDto>> grouped = new LinkedHashMap<>();
         for (Questions q : questions) {
             Long qTopicId = q.getTopic() != null ? q.getTopic().getId() : topicId;
-            boolean dateAvailable = q.getLearningDate() != null
-                    && isLearningDateAvailable(qTopicId, q.getLearningDate());
+            boolean dateAvailable = Boolean.TRUE.equals(q.getIsAvailable());
             boolean done = studentAnswerRepository.existsByStudentIdAndQuestionsId(studentId, q.getId());
             Boolean correct = null;
             if (done) {
@@ -449,17 +435,16 @@ public class QuestionsService {
         }).collect(Collectors.toList());
     }
 
-    // Atur ketersediaan per learning date (topik + tanggal)
+    // Atur ketersediaan per learning date (topik + tanggal) — update semua soal di tanggal tersebut
+    @Transactional
     public LearningDateAvailabilityDto setAvailabilityByTopicAndDate(
             Long topicId, LocalDate learningDate, boolean available) {
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
-        TopicLearningDate tld = getOrCreateLearningDate(topic, learningDate);
-        tld.setIsAvailable(available);
-        topicLearningDateRepository.save(tld);
-
         List<Questions> questions = questionsRepository.findByTopicAndLearningDate(topic, learningDate);
-        questions.forEach(q -> q.setIsAvailable(available));
+        for (Questions q : questions) {
+            q.setIsAvailable(available);
+        }
         questionsRepository.saveAll(questions);
 
         return new LearningDateAvailabilityDto(learningDate, available, questions.size());
@@ -467,7 +452,7 @@ public class QuestionsService {
 
     public Optional<LearningDateAvailabilityDto> getAvailabilityByTopicAndDate(
             Long topicId, LocalDate learningDate) {
-        Topic topic = topicRepository.findById(topicId).orElse(null);
+        Tema topic = temaRepository.findById(topicId).orElse(null);
         if (topic == null) return Optional.empty();
         int count = questionsRepository.findByTopicAndLearningDate(topic, learningDate).size();
         if (count == 0) return Optional.empty();
@@ -478,7 +463,7 @@ public class QuestionsService {
     }
 
     public List<LearningDateAvailabilityDto> getAvailabilityByTopic(Long topicId) {
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
         Map<LocalDate, Integer> counts = new LinkedHashMap<>();
         for (Questions q : questionsRepository.findByTopic(topic)) {
@@ -496,6 +481,7 @@ public class QuestionsService {
     }
 
     // Delete
+    @Transactional
     public boolean deleteQuestion(Long id) {
         return questionsRepository.findById(id)
                 .map(q -> {

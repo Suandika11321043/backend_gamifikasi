@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ public class UserService {
         return new LoginResponse(token, user.getUsername(), user.getRole());
     }
 
+    @Transactional
     public UserResponse createUser(UserRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username sudah digunakan: " + request.getUsername());
@@ -54,6 +56,7 @@ public class UserService {
         return toResponse(saved);
     }
 
+    @Transactional
     public UserResponse createFirstAdmin(UserRequest request) {
         boolean adminExists = userRepository.findAll().stream()
                 .anyMatch(u -> "ADMIN".equalsIgnoreCase(u.getRole()));
@@ -75,6 +78,7 @@ public class UserService {
         return toResponse(user);
     }
 
+    @Transactional
     public UserResponse updateUser(Long id, UserRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User tidak ditemukan dengan id: " + id));
@@ -87,6 +91,7 @@ public class UserService {
         return toResponse(saved);
     }
 
+    @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new RuntimeException("User tidak ditemukan dengan id: " + id);

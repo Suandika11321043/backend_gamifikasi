@@ -18,7 +18,7 @@ public class Questions {
 
     @ManyToOne
     @JoinColumn(name = "topic_id")
-    private Topic topic;
+    private Tema topic;
 
     @Column(name = "learning_date")
     private LocalDate learningDate;
@@ -43,8 +43,4 @@ public class Questions {
 
     @Column(name = "is_available", nullable = false)
     private Boolean isAvailable = false;
-
-    /** VERTICAL (default) atau HORIZONTAL — hanya untuk tipe SORTING. */
-    @Column(name = "sort_layout")
-    private String sortLayout = "VERTICAL";
 }

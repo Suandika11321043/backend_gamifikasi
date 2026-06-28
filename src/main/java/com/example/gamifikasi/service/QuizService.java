@@ -24,7 +24,7 @@ public class QuizService {
     private StudentRepository studentRepository;
 
     @Autowired
-    private TopicRepository topicRepository;
+    private TemaRepository temaRepository;
 
     @Autowired
     private QuestionsRepository questionsRepository;
@@ -45,7 +45,7 @@ public class QuizService {
     private StudentScoreRepository studentScoreRepository;
 
     @Autowired
-    private StudentDayScoreRepository studentDayScoreRepository;
+    private StudentTopicScoreService studentTopicScoreService;
 
     @Autowired
     private QuestionsService questionsService;
@@ -55,7 +55,7 @@ public class QuizService {
     // ────────────────────────────────────────────────────────────
 
     public List<QuestionWithOptionsDto> getQuestionsByTopic(Long topicId) {
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
         return questionsRepository.findByTopic(topic).stream()
                 .map(this::toQuestionWithOptionsDto)
@@ -68,7 +68,7 @@ public class QuizService {
      */
     public List<QuestionWithOptionsDto> getQuestionsByTopicAndDate(
             Long topicId, java.time.LocalDate date) {
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
         if (!questionsService.isLearningDateAvailable(topicId, date)) {
             throw new RuntimeException("Soal untuk tanggal ini belum tersedia.");
@@ -145,7 +145,7 @@ public class QuizService {
     }
 
     // ────────────────────────────────────────────────────────────
-    // FINISH KUIS: hitung bintang & update rank setelah semua soal dijawab
+    // FINISH KUIS: hitung bintang setelah semua soal dijawab
     // ────────────────────────────────────────────────────────────
 
     @Transactional
@@ -154,7 +154,7 @@ public class QuizService {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan: " + request.getStudentId()));
 
-        Topic topic = topicRepository.findById(request.getTopicId())
+        Tema topic = temaRepository.findById(request.getTopicId())
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + request.getTopicId()));
 
         int sessionCorrect = request.getCorrectCount() != null ? request.getCorrectCount() : 0;
@@ -175,52 +175,36 @@ public class QuizService {
             dayEarnedScore = request.getTotalEarnedScore() != null ? request.getTotalEarnedScore() : 0;
         }
 
+        int preCorrectSum = studentScoreRepository.sumCorrectCountByStudentAndTopic(student, topic);
+        int preEarnedSum = studentScoreRepository.sumTotalEarnedScoreByStudentAndTopic(student, topic);
+
         boolean improved = false;
         if (learningDate != null) {
-            StudentDayScore dayScore = studentDayScoreRepository
+            StudentScore score = studentScoreRepository
                     .findByStudentAndTopicAndLearningDate(student, topic, learningDate)
-                    .orElse(new StudentDayScore());
-            int previousDayStars = dayScore.getStarCount() != null ? dayScore.getStarCount() : 0;
-            int previousDayScore = dayScore.getTotalEarnedScore() != null ? dayScore.getTotalEarnedScore() : 0;
-            improved = dayCorrectCount > previousDayStars || dayEarnedScore > previousDayScore;
+                    .orElse(new StudentScore());
+            int previousDayCorrect = score.getCorrectCount() != null ? score.getCorrectCount() : 0;
+            int previousDayScore = score.getTotalEarnedScore() != null ? score.getTotalEarnedScore() : 0;
+            improved = dayCorrectCount > previousDayCorrect || dayEarnedScore > previousDayScore;
 
-            dayScore.setStudent(student);
-            dayScore.setTopic(topic);
-            dayScore.setLearningDate(learningDate);
-            dayScore.setCorrectCount(dayCorrectCount);
-            dayScore.setStarCount(dayCorrectCount);
-            dayScore.setTotalEarnedScore(dayEarnedScore);
-            studentDayScoreRepository.save(dayScore);
+            score.setStudent(student);
+            score.setTopic(topic);
+            score.setLearningDate(learningDate);
+            score.setCorrectCount(dayCorrectCount);
+            score.setTotalEarnedScore(dayEarnedScore);
+            studentScoreRepository.save(score);
         }
-
-        int topicCorrectCount = studentAnswerRepository
-                .countLatestCorrectByStudentIdAndTopicId(student.getId(), topic.getId());
 
         int topicEarnedScore = studentAnswerRepository
                 .sumLatestEarnedScoreByStudentIdAndTopicId(student.getId(), topic.getId());
 
-        StudentScore score = studentScoreRepository
-                .findByStudentAndTopic(student, topic)
-                .orElse(new StudentScore());
-
-        int previousTopicStars = score.getStarCount() != null ? score.getStarCount() : 0;
-        int currentBestScore = score.getTotalEarnedScore() != null ? score.getTotalEarnedScore() : 0;
         if (!improved) {
-            improved = topicCorrectCount > previousTopicStars || topicEarnedScore > currentBestScore;
+            int postCorrectSum = studentScoreRepository.sumCorrectCountByStudentAndTopic(student, topic);
+            int postEarnedSum = studentScoreRepository.sumTotalEarnedScoreByStudentAndTopic(student, topic);
+            improved = postCorrectSum > preCorrectSum || postEarnedSum > preEarnedSum;
         }
 
-        score.setStudent(student);
-        score.setTopic(topic);
-        score.setTotalEarnedScore(topicEarnedScore);
-        score.setCorrectCount(topicCorrectCount);
-        score.setStarCount(topicCorrectCount);
-        studentScoreRepository.save(score);
-
-        int totalStars = studentDayScoreRepository.sumStarsByStudent(student);
-        if (totalStars == 0) {
-            totalStars = studentScoreRepository.sumStarsByStudent(student);
-        }
-        RankLevel rankLevel = RankLevel.fromTotalStars(totalStars);
+        int totalStars = studentTopicScoreService.sumTopicStarsForStudent(student);
 
         int starsEarned = learningDate != null ? dayCorrectCount : sessionCorrect;
         int earnedScoreForResponse = learningDate != null ? dayEarnedScore
@@ -232,7 +216,6 @@ public class QuizService {
                 starsEarned,
                 improved,
                 totalStars,
-                rankLevel,
                 earnedScoreForResponse,
                 null);
     }
@@ -247,7 +230,7 @@ public class QuizService {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan: " + request.getStudentId()));
 
-        Topic topic = topicRepository.findById(request.getTopicId())
+        Tema topic = temaRepository.findById(request.getTopicId())
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + request.getTopicId()));
 
         List<Questions> topicQuestions = questionsRepository.findByTopic(topic);
@@ -294,37 +277,22 @@ public class QuizService {
             details.add(new AnswerResultDto(answerReq.getQuestionId(), isCorrect, earnedScore));
         }
 
-        int newStars = correctCount;
-
-        StudentScore score = studentScoreRepository
-                .findByStudentAndTopic(student, topic)
-                .orElse(new StudentScore());
-
         int topicCorrectCount = studentAnswerRepository
                 .countLatestCorrectByStudentIdAndTopicId(student.getId(), topic.getId());
 
-        int previousStars = score.getStarCount() != null ? score.getStarCount() : 0;
-        int currentBestScore = score.getTotalEarnedScore() != null ? score.getTotalEarnedScore() : 0;
-        int bestEarnedScore = Math.max(currentBestScore, totalEarnedScore);
-        boolean improved = topicCorrectCount > previousStars || bestEarnedScore > currentBestScore;
+        int baselineCorrect = studentScoreRepository.sumCorrectCountByStudentAndTopic(student, topic);
+        int baselineEarned = studentScoreRepository.sumTotalEarnedScoreByStudentAndTopic(student, topic);
+        int bestEarnedScore = Math.max(baselineEarned, totalEarnedScore);
+        boolean improved = topicCorrectCount > baselineCorrect || bestEarnedScore > baselineEarned;
 
-        score.setStudent(student);
-        score.setTopic(topic);
-        score.setTotalEarnedScore(bestEarnedScore);
-        score.setCorrectCount(topicCorrectCount);
-        score.setStarCount(topicCorrectCount);
-        studentScoreRepository.save(score);
-
-        int totalStars = studentScoreRepository.sumStarsByStudent(student);
-        RankLevel rankLevel = RankLevel.fromTotalStars(totalStars);
+        int totalStars = studentTopicScoreService.sumTopicStarsForStudent(student);
 
         return new QuizResultResponse(
                 correctCount,
                 totalQuestions,
-                newStars,
+                correctCount,
                 improved,
                 totalStars,
-                rankLevel,
                 totalEarnedScore,
                 details);
     }
@@ -367,38 +335,15 @@ public class QuizService {
     }
 
     // ────────────────────────────────────────────────────────────
-    // CRUD: StudentScore
+    // Skor siswa per topik (dihitung dari jawaban)
     // ────────────────────────────────────────────────────────────
 
-    public List<StudentScore> getScoresByStudent(Long studentId) {
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan: " + studentId));
-        return studentScoreRepository.findByStudent(student);
+    public List<StudentScoreDto> getScoresByStudent(Long studentId) {
+        return studentTopicScoreService.getScoresByStudent(studentId);
     }
 
-    public StudentScore getScoreByStudentAndTopic(Long studentId, Long topicId) {
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Siswa tidak ditemukan: " + studentId));
-        Topic topic = topicRepository.findById(topicId)
-                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
-
-        int correctCount = studentAnswerRepository
-                .countLatestCorrectByStudentIdAndTopicId(studentId, topicId);
-        int earnedScore = studentAnswerRepository
-                .sumLatestEarnedScoreByStudentIdAndTopicId(studentId, topicId);
-        int dayStars = studentDayScoreRepository.sumStarsByStudentAndTopic(student, topic);
-        int starCount = Math.max(correctCount, dayStars);
-
-        StudentScore score = studentScoreRepository
-                .findByStudentAndTopic(student, topic)
-                .orElse(new StudentScore());
-
-        score.setStudent(student);
-        score.setTopic(topic);
-        score.setCorrectCount(correctCount);
-        score.setStarCount(starCount);
-        score.setTotalEarnedScore(earnedScore);
-        return score;
+    public StudentScoreDto getScoreByStudentAndTopic(Long studentId, Long topicId) {
+        return studentTopicScoreService.getScoreByStudentAndTopic(studentId, topicId);
     }
 
     // ────────────────────────────────────────────────────────────
@@ -411,7 +356,7 @@ public class QuizService {
      */
     public List<QuestionWithCorrectAnswerDto> getQuestionsWithAnswersByTopicAndDate(
             Long topicId, java.time.LocalDate date) {
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
         return questionsRepository.findByTopicAndLearningDate(topic, date).stream()
                 .map(this::toQuestionWithCorrectAnswerDto)
@@ -485,7 +430,7 @@ public class QuizService {
             Long studentId, Long topicId, java.time.LocalDate learningDate) {
         if (!studentRepository.existsById(studentId))
             throw new RuntimeException("Siswa tidak ditemukan: " + studentId);
-        Topic topic = topicRepository.findById(topicId)
+        Tema topic = temaRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
 
         List<Questions> questions = learningDate != null
@@ -559,7 +504,7 @@ public class QuizService {
     public List<StudentAnswerViewDto> getStudentAnswersForTopic(Long studentId, Long topicId) {
         if (!studentRepository.existsById(studentId))
             throw new RuntimeException("Siswa tidak ditemukan: " + studentId);
-        if (!topicRepository.existsById(topicId))
+        if (!temaRepository.existsById(topicId))
             throw new RuntimeException("Topik tidak ditemukan: " + topicId);
 
         List<StudentAnswer> answers = studentAnswerRepository

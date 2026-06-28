@@ -67,7 +67,6 @@ public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Lo
             ")", nativeQuery = true)
     int sumLatestEarnedScoreByStudentIdAndTopicId(@Param("studentId") Long studentId, @Param("topicId") Long topicId);
 
-    /** Jumlah soal dijawab benar (jawaban terbaru per soal) dalam satu topik. */
     @Query(value = "SELECT COALESCE(SUM(CASE WHEN sa.is_correct = 1 THEN 1 ELSE 0 END), 0) FROM student_answer sa " +
             "JOIN questions q ON sa.id_question = q.ID " +
             "WHERE sa.id_student = :studentId AND q.topic_id = :topicId " +
@@ -108,6 +107,21 @@ public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Lo
             @Param("studentId") Long studentId,
             @Param("topicId") Long topicId,
             @Param("learningDate") java.time.LocalDate learningDate);
+
+    @Query(value = "SELECT COALESCE(SUM(CASE WHEN sa.is_correct = 1 THEN 1 ELSE 0 END), 0) FROM student_answer sa " +
+            "WHERE sa.id_student = :studentId " +
+            "AND sa.id IN (" +
+            "  SELECT MAX(sa2.id) FROM student_answer sa2 " +
+            "  JOIN questions q2 ON sa2.id_question = q2.ID " +
+            "  WHERE sa2.id_student = :studentId " +
+            "  GROUP BY sa2.id_question" +
+            ")", nativeQuery = true)
+    int countLatestCorrectByStudentId(@Param("studentId") Long studentId);
+
+    @Query(value = "SELECT DISTINCT q.topic_id FROM student_answer sa " +
+            "JOIN questions q ON sa.id_question = q.ID " +
+            "WHERE sa.id_student = :studentId AND q.topic_id IS NOT NULL", nativeQuery = true)
+    List<Long> findDistinctTopicIdsByStudentId(@Param("studentId") Long studentId);
 
     void deleteByStudentId(Long studentId);
 }
