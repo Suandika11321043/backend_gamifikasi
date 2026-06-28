@@ -1,7 +1,6 @@
 package com.example.gamifikasi.controller;
 
 import com.example.gamifikasi.dto.*;
-import com.example.gamifikasi.entity.StudentScore;
 import com.example.gamifikasi.service.QuizService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -74,7 +73,7 @@ public class QuizController {
 
     /**
      * Dipanggil setelah semua soal selesai dijawab satu-per-satu.
-     * Hitung bintang, update StudentScore, kembalikan hasil akhir.
+     * Hitung bintang, update skor harian, kembalikan hasil akhir.
      */
     @PostMapping("/finish")
     public ResponseEntity<QuizResultResponse> finishQuiz(
@@ -134,13 +133,13 @@ public class QuizController {
     // ─── Skor siswa ──────────────────────────────────────────────
 
     @GetMapping("/scores/students/{studentId}")
-    public ResponseEntity<List<StudentScore>> getScoresByStudent(
+    public ResponseEntity<List<StudentScoreDto>> getScoresByStudent(
             @PathVariable Long studentId) {
         return ResponseEntity.ok(quizService.getScoresByStudent(studentId));
     }
 
     @GetMapping("/scores/students/{studentId}/topics/{topicId}")
-    public ResponseEntity<StudentScore> getScoreByStudentAndTopic(
+    public ResponseEntity<StudentScoreDto> getScoreByStudentAndTopic(
             @PathVariable Long studentId,
             @PathVariable Long topicId) {
         return ResponseEntity.ok(quizService.getScoreByStudentAndTopic(studentId, topicId));

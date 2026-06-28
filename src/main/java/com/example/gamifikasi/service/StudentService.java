@@ -1,13 +1,11 @@
 package com.example.gamifikasi.service;
 
 import com.example.gamifikasi.dto.StudentDto;
-import com.example.gamifikasi.entity.RankLevel;
 import com.example.gamifikasi.entity.Student;
 import com.example.gamifikasi.repository.StudentAnswerRepository;
-import com.example.gamifikasi.repository.StudentDayScoreRepository;
-import com.example.gamifikasi.repository.StudentRepository;
 import com.example.gamifikasi.repository.StudentScoreRepository;
-import com.example.gamifikasi.repository.QuizTimerSessionRepository;
+import com.example.gamifikasi.repository.StudentRepository;
+import com.example.gamifikasi.repository.QuestionTimerSessionRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,10 +33,10 @@ public class StudentService {
     private StudentScoreRepository studentScoreRepository;
 
     @Autowired
-    private StudentDayScoreRepository studentDayScoreRepository;
+    private StudentTopicScoreService studentTopicScoreService;
 
     @Autowired
-    private QuizTimerSessionRepository quizTimerSessionRepository;
+    private QuestionTimerSessionRepository questionTimerSessionRepository;
 
     private StudentDto convertToDto(Student student) {
         StudentDto dto = new StudentDto();
@@ -51,17 +49,14 @@ public class StudentService {
         dto.setTotalEarnedScore(studentAnswerRepository.sumMaxEarnedScorePerTopicByStudentId(student.getId()));
 
         // Total bintang = jumlah bintang per hari (semua topik)
-        int totalStars = studentDayScoreRepository.sumStarsByStudent(student);
-        if (totalStars == 0) {
-            totalStars = studentScoreRepository.sumStarsByStudent(student);
-        }
+        int totalStars = studentTopicScoreService.sumTopicStarsForStudent(student);
         dto.setTotalStars(totalStars);
-        dto.setRankName(RankLevel.fromTotalStars(totalStars).name());
 
         return dto;
     }
 
     // Create Student
+    @Transactional
     public StudentDto createStudent(StudentDto studentDto, MultipartFile avatarFile) throws IOException {
         Student student = new Student();
         student.setName(studentDto.getName());
@@ -97,6 +92,7 @@ public class StudentService {
     }
 
     // Update Student
+    @Transactional
     public Optional<StudentDto> updateStudent(Long id, StudentDto studentDto, MultipartFile avatarFile)
             throws IOException {
         Optional<Student> existingOpt = studentRepository.findById(id);
@@ -123,10 +119,9 @@ public class StudentService {
         return studentRepository.findById(id)
                 .map(student -> {
                     Long studentId = student.getId();
-                    quizTimerSessionRepository.deleteByStudentId(studentId);
+                    questionTimerSessionRepository.deleteByStudentId(studentId);
                     studentAnswerRepository.deleteByStudentId(studentId);
-                    studentDayScoreRepository.deleteByStudent(student);
-                    studentScoreRepository.deleteByStudent(student);
+                        studentScoreRepository.deleteByStudent(student);
                     try {
                         fileStorageUtil.deleteFile(student.getAvatar());
                     } catch (IOException e) {

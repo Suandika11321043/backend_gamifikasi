@@ -1,15 +1,14 @@
 package com.example.gamifikasi.service;
 
 import com.example.gamifikasi.dto.*;
-import com.example.gamifikasi.entity.RankLevel;
 import com.example.gamifikasi.entity.Student;
-import com.example.gamifikasi.entity.StudentScore;
-import com.example.gamifikasi.entity.Topic;
+import com.example.gamifikasi.entity.Tema;
 import com.example.gamifikasi.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,19 +21,19 @@ public class DashboardService {
     private QuestionsRepository questionsRepository;
 
     @Autowired
-    private TopicRepository topicRepository;
+    private TemaRepository temaRepository;
 
     @Autowired
     private StudentAnswerRepository studentAnswerRepository;
 
     @Autowired
-    private StudentScoreRepository studentScoreRepository;
+    private StudentTopicScoreService studentTopicScoreService;
 
     public DashboardStatsDto getStats() {
         DashboardStatsDto stats = new DashboardStatsDto();
         stats.setTotalSoal(questionsRepository.count());
         stats.setTotalStudents(studentRepository.count());
-        stats.setTotalTopics(topicRepository.count());
+        stats.setTotalTopics(temaRepository.count());
         return stats;
     }
 
@@ -58,41 +57,24 @@ public class DashboardService {
 
     public List<TopicScoreGroupDto> getStudentsByTopic(Long topicId) {
         if (topicId != null) {
-            Topic topic = topicRepository.findById(topicId)
+            Tema topic = temaRepository.findById(topicId)
                     .orElseThrow(() -> new RuntimeException("Tema tidak ditemukan: " + topicId));
             TopicScoreGroupDto group = buildTopicScoreGroup(topic);
             return List.of(group);
         }
 
-        return topicRepository.findAll().stream()
+        return temaRepository.findAll().stream()
                 .map(this::buildTopicScoreGroup)
                 .collect(Collectors.toList());
     }
 
-    private TopicScoreGroupDto buildTopicScoreGroup(Topic topic) {
+    private TopicScoreGroupDto buildTopicScoreGroup(Tema topic) {
         TopicScoreGroupDto group = new TopicScoreGroupDto();
         group.setTopicId(topic.getId());
         group.setTopicName(topic.getNameTopic());
 
-        Map<Long, StudentScore> scoreByStudentId = studentScoreRepository.findByTopic(topic).stream()
-                .collect(Collectors.toMap(s -> s.getStudent().getId(), s -> s, (a, b) -> a));
-
         List<TopicStudentScoreDto> studentScores = studentRepository.findAll().stream()
-                .map(student -> {
-                    StudentScore score = scoreByStudentId.get(student.getId());
-                    if (score != null) {
-                        return toTopicStudentScoreDto(score, topic);
-                    }
-                    TopicStudentScoreDto dto = new TopicStudentScoreDto();
-                    dto.setStudentId(student.getId());
-                    dto.setStudentName(student.getName());
-                    dto.setStudentGroup(student.getGroup());
-                    dto.setAvatar(student.getAvatar());
-                    dto.setTotalEarnedScore(
-                            studentAnswerRepository.sumLatestEarnedScoreByStudentIdAndTopicId(student.getId(), topic.getId()));
-                    dto.setStarCount(0);
-                    return dto;
-                })
+                .map(student -> toTopicStudentScoreDto(student, topic))
                 .sorted(Comparator
                         .comparing(TopicStudentScoreDto::getTotalEarnedScore, Comparator.nullsFirst(Comparator.naturalOrder()))
                         .reversed()
@@ -107,18 +89,14 @@ public class DashboardService {
         return group;
     }
 
-    private TopicStudentScoreDto toTopicStudentScoreDto(StudentScore score, Topic topic) {
-        Student student = score.getStudent();
+    private TopicStudentScoreDto toTopicStudentScoreDto(Student student, Tema topic) {
+        StudentScoreDto score = studentTopicScoreService.buildScore(student, topic.getId());
         TopicStudentScoreDto dto = new TopicStudentScoreDto();
         dto.setStudentId(student.getId());
         dto.setStudentName(student.getName());
         dto.setStudentGroup(student.getGroup());
         dto.setAvatar(student.getAvatar());
-
-        int earnedScore = score.getTotalEarnedScore() != null
-                ? score.getTotalEarnedScore()
-                : studentAnswerRepository.sumLatestEarnedScoreByStudentIdAndTopicId(student.getId(), topic.getId());
-        dto.setTotalEarnedScore(earnedScore);
+        dto.setTotalEarnedScore(score.getTotalEarnedScore() != null ? score.getTotalEarnedScore() : 0);
         dto.setStarCount(score.getStarCount() != null ? score.getStarCount() : 0);
         return dto;
     }
@@ -131,9 +109,8 @@ public class DashboardService {
         dto.setAvatar(student.getAvatar());
         dto.setTotalEarnedScore(studentAnswerRepository.sumMaxEarnedScorePerTopicByStudentId(student.getId()));
 
-        int totalStars = studentScoreRepository.sumStarsByStudent(student);
+        int totalStars = studentTopicScoreService.sumTopicStarsForStudent(student);
         dto.setTotalStars(totalStars);
-        dto.setRankName(RankLevel.fromTotalStars(totalStars).name());
 
         return dto;
     }

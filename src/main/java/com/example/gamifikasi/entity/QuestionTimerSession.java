@@ -13,9 +13,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@Table(name = "quiz_timer_session", uniqueConstraints = @UniqueConstraint(columnNames = { "student_id", "topic_id",
+@Table(name = "question_timer_session", uniqueConstraints = @UniqueConstraint(columnNames = { "student_id", "topic_id",
         "question_id" }))
-public class QuizTimerSession {
+public class QuestionTimerSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

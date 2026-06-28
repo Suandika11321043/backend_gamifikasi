@@ -1,6 +1,5 @@
 package com.example.gamifikasi.dto;
 
-import com.example.gamifikasi.entity.RankLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +8,7 @@ import lombok.Setter;
 import java.util.List;
 
 /**
- * Respons setelah siswa submit kuis, berisi rekap nilai dan info rank terkini.
+ * Respons setelah siswa submit kuis, berisi rekap nilai.
  */
 @Getter
 @Setter
@@ -28,9 +27,6 @@ public class QuizResultResponse {
 
     /** Total bintang siswa setelah submit ini. */
     private int totalStars;
-
-    /** Rank siswa setelah submit ini. */
-    private RankLevel rankName;
 
     /** Total poin yang diperoleh pada sesi kuis ini. */
     private int totalEarnedScore;
