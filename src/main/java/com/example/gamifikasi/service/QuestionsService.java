@@ -501,6 +501,21 @@ public class QuestionsService {
                 .orElse(false);
     }
 
+    /** Hapus semua soal (dan data terkait) dalam satu tema — dipanggil saat hapus tema. */
+    @Transactional
+    public void deleteAllQuestionsByTopicId(Long topicId) {
+        Tema topic = temaRepository.findById(topicId).orElse(null);
+        if (topic == null) {
+            return;
+        }
+        List<Long> questionIds = questionsRepository.findByTopic(topic).stream()
+                .map(Questions::getId)
+                .toList();
+        for (Long questionId : questionIds) {
+            deleteQuestion(questionId);
+        }
+    }
+
     private void validateScorePoint(Integer scorePoint) {
         if (scorePoint == null || scorePoint <= 0) {
             throw new IllegalArgumentException("Poin soal wajib diisi dan harus lebih dari 0.");
