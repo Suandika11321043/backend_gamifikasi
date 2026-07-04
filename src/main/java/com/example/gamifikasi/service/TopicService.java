@@ -2,6 +2,8 @@ package com.example.gamifikasi.service;
 
 import com.example.gamifikasi.dto.TopicDto;
 import com.example.gamifikasi.entity.Tema;
+import com.example.gamifikasi.repository.QuestionTimerSessionRepository;
+import com.example.gamifikasi.repository.StudentScoreRepository;
 import com.example.gamifikasi.repository.TemaRepository;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,15 @@ public class TopicService {
     private TemaRepository temaRepository;
 
     @Autowired
+    private QuestionsService questionsService;
+
+    @Autowired
+    private StudentScoreRepository studentScoreRepository;
+
+    @Autowired
+    private QuestionTimerSessionRepository questionTimerSessionRepository;
+
+    @Autowired
     private FileStorageUtil fileStorageUtil;
 
     private TopicDto convertToDto(Tema topic) {
@@ -32,14 +43,21 @@ public class TopicService {
                 topic.getIsActive());
     }
 
-    @Transactional
     public TopicDto createTopic(TopicDto createDto, MultipartFile iconFile) throws IOException {
+        String iconUrl = null;
+        if (iconFile != null && !iconFile.isEmpty()) {
+            iconUrl = fileStorageUtil.storeFile(iconFile);
+        }
+        return persistNewTopic(createDto, iconUrl);
+    }
+
+    @Transactional
+    protected TopicDto persistNewTopic(TopicDto createDto, String iconUrl) {
         Tema topic = new Tema();
         topic.setNameTopic(createDto.getNameTopic());
         topic.setDescription(createDto.getDescription());
         topic.setIsActive(createDto.getIsActive() != null ? createDto.getIsActive() : true);
-        if (iconFile != null && !iconFile.isEmpty()) {
-            String iconUrl = fileStorageUtil.storeFile(iconFile);
+        if (iconUrl != null) {
             topic.setIcon(iconUrl);
         }
         return convertToDto(temaRepository.save(topic));
@@ -59,27 +77,37 @@ public class TopicService {
         return temaRepository.findByNameTopic(nameTopic).map(this::convertToDto);
     }
 
-    @Transactional
     public Optional<TopicDto> updateTopic(Long id, String nameTopic, String description, Boolean isActive,
-            MultipartFile iconFile)
-            throws IOException {
+            MultipartFile iconFile) throws IOException {
         Optional<Tema> existingOpt = temaRepository.findById(id);
-        if (existingOpt.isEmpty())
+        if (existingOpt.isEmpty()) {
             return Optional.empty();
-
-        Tema topic = existingOpt.get();
-        topic.setNameTopic(nameTopic);
-        topic.setDescription(description);
-        if (isActive != null) {
-            topic.setIsActive(isActive);
         }
 
+        String newIconUrl = null;
         if (iconFile != null && !iconFile.isEmpty()) {
-            fileStorageUtil.deleteFile(topic.getIcon());
-            topic.setIcon(fileStorageUtil.storeFile(iconFile));
+            String oldIcon = existingOpt.get().getIcon();
+            fileStorageUtil.deleteFile(oldIcon);
+            newIconUrl = fileStorageUtil.storeFile(iconFile);
         }
 
-        return Optional.of(convertToDto(temaRepository.save(topic)));
+        return applyTopicUpdate(id, nameTopic, description, isActive, newIconUrl);
+    }
+
+    @Transactional
+    protected Optional<TopicDto> applyTopicUpdate(Long id, String nameTopic, String description, Boolean isActive,
+            String iconUrl) {
+        return temaRepository.findById(id).map(topic -> {
+            topic.setNameTopic(nameTopic);
+            topic.setDescription(description);
+            if (isActive != null) {
+                topic.setIsActive(isActive);
+            }
+            if (iconUrl != null) {
+                topic.setIcon(iconUrl);
+            }
+            return convertToDto(temaRepository.save(topic));
+        });
     }
 
     public List<TopicDto> getActiveTopics() {
@@ -97,18 +125,30 @@ public class TopicService {
         });
     }
 
-    @Transactional
     public boolean deleteTopic(Long id) {
-        return temaRepository.findById(id)
-                .map(topic -> {
-                    try {
-                        fileStorageUtil.deleteFile(topic.getIcon());
-                    } catch (IOException e) {
-                        // continue deletion even if icon delete fails
-                    }
-                    temaRepository.deleteById(id);
-                    return true;
-                })
-                .orElse(false);
+        Optional<Tema> topicOpt = temaRepository.findById(id);
+        if (topicOpt.isEmpty()) {
+            return false;
+        }
+        String icon = topicOpt.get().getIcon();
+        deleteTopicRecord(id);
+        try {
+            fileStorageUtil.deleteFile(icon);
+        } catch (IOException e) {
+            // continue even if icon delete fails
+        }
+        return true;
+    }
+
+    @Transactional
+    protected void deleteTopicRecord(Long id) {
+        Tema topic = temaRepository.findById(id).orElse(null);
+        if (topic == null) {
+            return;
+        }
+        questionsService.deleteAllQuestionsByTopicId(id);
+        studentScoreRepository.deleteByTopic(topic);
+        questionTimerSessionRepository.deleteByTopicId(id);
+        temaRepository.deleteById(id);
     }
 }

@@ -35,4 +35,6 @@ public interface StudentScoreRepository extends JpaRepository<StudentScore, Long
     int sumTotalEarnedScoreByStudentAndTopic(@Param("student") Student student, @Param("topic") Tema topic);
 
     void deleteByStudent(Student student);
+
+    void deleteByTopic(Tema topic);
 }

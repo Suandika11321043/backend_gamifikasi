@@ -18,4 +18,6 @@ public interface QuestionTimerSessionRepository extends JpaRepository<QuestionTi
     void deleteByStudentIdAndTopicIdAndQuestionId(Long studentId, Long topicId, Long questionId);
 
     void deleteByStudentId(Long studentId);
+
+    void deleteByTopicId(Long topicId);
 }
