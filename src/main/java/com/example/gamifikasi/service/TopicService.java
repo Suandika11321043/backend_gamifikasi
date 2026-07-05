@@ -136,30 +136,24 @@ public class TopicService {
         });
     }
 
+    @Transactional
     public boolean deleteTopic(Long id) {
         Optional<Tema> topicOpt = temaRepository.findById(id);
         if (topicOpt.isEmpty()) {
             return false;
         }
-        String icon = topicOpt.get().getIcon();
-        deleteTopicRecord(id);
-        try {
-            fileStorageUtil.deleteFile(icon);
-        } catch (IOException e) {
-            // continue even if icon delete fails
-        }
-        return true;
-    }
+        Tema topic = topicOpt.get();
+        String icon = topic.getIcon();
 
-    @Transactional
-    protected void deleteTopicRecord(Long id) {
-        Tema topic = temaRepository.findById(id).orElse(null);
-        if (topic == null) {
-            return;
-        }
         questionsService.deleteAllQuestionsByTopicId(id);
         studentScoreRepository.deleteByTopic(topic);
         questionTimerSessionRepository.deleteByTopicId(id);
         temaRepository.deleteById(id);
+
+        try {
+            fileStorageUtil.deleteFile(icon);
+        } catch (IOException e) {
+        }
+        return true;
     }
 }
