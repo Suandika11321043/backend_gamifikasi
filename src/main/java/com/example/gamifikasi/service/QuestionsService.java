@@ -502,7 +502,10 @@ public class QuestionsService {
                     } catch (IOException e) {
                         // continue deletion
                     }
-                    jigsawPuzzleRepository.findByQuestion(q).ifPresent(jigsawPuzzleRepository::delete);
+                    jigsawPuzzleRepository.findByQuestion(q).ifPresent(puzzle -> {
+                        jigsawPieceRepository.deleteAll(jigsawPieceRepository.findByPuzzle(puzzle));
+                        jigsawPuzzleRepository.delete(puzzle);
+                    });
                     matchingRelationRepository.deleteAll(matchingRelationRepository.findByQuestions(q));
                     studentAnswerRepository.deleteAll(studentAnswerRepository.findByQuestions(q));
                     questionOptionsRepository.deleteAll(questionOptionsRepository.findByQuestions(q));
