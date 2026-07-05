@@ -18,6 +18,7 @@ import com.example.gamifikasi.repository.JigsawPieceRepository;
 import com.example.gamifikasi.repository.JigsawPuzzleRepository;
 import com.example.gamifikasi.repository.StudentAnswerRepository;
 import com.example.gamifikasi.repository.TemaRepository;
+import com.example.gamifikasi.exception.ResourceNotFoundException;
 import com.example.gamifikasi.util.FileStorageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,8 +121,9 @@ public class QuestionsService {
             MultipartFile imageFile, MultipartFile audioFile,
             Integer timeLimitMinutes, Integer scorePoint) throws IOException {
         validateScorePoint(scorePoint);
+        validateQuestionType(questionType);
         Tema topic = temaRepository.findById(topicId)
-                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+                .orElseThrow(() -> new ResourceNotFoundException("Topik tidak ditemukan: " + topicId));
         Questions q = new Questions();
         q.setTopic(topic);
         q.setLearningDate(learningDate);
@@ -144,11 +147,11 @@ public class QuestionsService {
     @Transactional
     public QuestionsDto duplicateQuestion(Long sourceId, Long topicId, LocalDate learningDate) {
         Questions source = questionsRepository.findById(sourceId)
-                .orElseThrow(() -> new RuntimeException("Soal tidak ditemukan: " + sourceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Soal tidak ditemukan: " + sourceId));
         validateScorePoint(source.getScorePoint());
 
         Tema topic = temaRepository.findById(topicId)
-                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+                .orElseThrow(() -> new ResourceNotFoundException("Topik tidak ditemukan: " + topicId));
 
         Questions copy = new Questions();
         copy.setTopic(topic);
@@ -286,11 +289,12 @@ public class QuestionsService {
             MultipartFile imageFile, MultipartFile audioFile,
             Integer timeLimitMinutes, Integer scorePoint) throws IOException {
         validateScorePoint(scorePoint);
+        validateQuestionType(questionType);
         Optional<Questions> existingOpt = questionsRepository.findById(id);
         if (existingOpt.isEmpty()) return Optional.empty();
 
         Tema topic = temaRepository.findById(topicId)
-                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+                .orElseThrow(() -> new ResourceNotFoundException("Topik tidak ditemukan: " + topicId));
         Questions q = existingOpt.get();
         validateQuestionTypeChange(q, questionType);
         LocalDate previousDate = q.getLearningDate();
@@ -317,6 +321,9 @@ public class QuestionsService {
     // Update timer only
     @Transactional
     public Optional<QuestionsDto> updateTimerLimit(Long id, Integer timeLimitMinutes) {
+        if (timeLimitMinutes != null && (timeLimitMinutes <= 0 || timeLimitMinutes > 60)) {
+            throw new IllegalArgumentException("Batas waktu harus antara 1–60 menit.");
+        }
         return questionsRepository.findById(id)
                 .map(q -> {
                     q.setTimeLimitMinutes(timeLimitMinutes);
@@ -440,8 +447,12 @@ public class QuestionsService {
     public LearningDateAvailabilityDto setAvailabilityByTopicAndDate(
             Long topicId, LocalDate learningDate, boolean available) {
         Tema topic = temaRepository.findById(topicId)
-                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+                .orElseThrow(() -> new ResourceNotFoundException("Topik tidak ditemukan: " + topicId));
         List<Questions> questions = questionsRepository.findByTopicAndLearningDate(topic, learningDate);
+        if (questions.isEmpty()) {
+            throw new ResourceNotFoundException(
+                    "Tidak ada soal pada tanggal " + learningDate + " untuk topik ini.");
+        }
         for (Questions q : questions) {
             q.setIsAvailable(available);
         }
@@ -464,7 +475,7 @@ public class QuestionsService {
 
     public List<LearningDateAvailabilityDto> getAvailabilityByTopic(Long topicId) {
         Tema topic = temaRepository.findById(topicId)
-                .orElseThrow(() -> new RuntimeException("Topik tidak ditemukan: " + topicId));
+                .orElseThrow(() -> new ResourceNotFoundException("Topik tidak ditemukan: " + topicId));
         Map<LocalDate, Integer> counts = new LinkedHashMap<>();
         for (Questions q : questionsRepository.findByTopic(topic)) {
             if (q.getLearningDate() != null) {
@@ -519,6 +530,18 @@ public class QuestionsService {
     private void validateScorePoint(Integer scorePoint) {
         if (scorePoint == null || scorePoint <= 0) {
             throw new IllegalArgumentException("Poin soal wajib diisi dan harus lebih dari 0.");
+        }
+    }
+
+    private static final Set<String> ALLOWED_QUESTION_TYPES = Set.of(
+            "QUIZ", "SORTING", "MATCH", "MATCHING", "DRAG_AND_DROP", "PUZZLE");
+
+    private void validateQuestionType(String questionType) {
+        if (questionType == null || questionType.isBlank()) {
+            throw new IllegalArgumentException("Tipe soal wajib diisi.");
+        }
+        if (!ALLOWED_QUESTION_TYPES.contains(questionType.toUpperCase())) {
+            throw new IllegalArgumentException("Tipe soal tidak valid: " + questionType);
         }
     }
 }

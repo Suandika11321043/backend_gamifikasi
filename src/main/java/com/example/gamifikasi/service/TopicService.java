@@ -43,6 +43,17 @@ public class TopicService {
                 topic.getIsActive());
     }
 
+    private String normalizeName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Nama tema wajib diisi.");
+        }
+        return name.trim();
+    }
+
+    private String normalizeDescription(String description) {
+        return description != null ? description.trim() : null;
+    }
+
     public TopicDto createTopic(TopicDto createDto, MultipartFile iconFile) throws IOException {
         String iconUrl = null;
         if (iconFile != null && !iconFile.isEmpty()) {
@@ -54,8 +65,8 @@ public class TopicService {
     @Transactional
     protected TopicDto persistNewTopic(TopicDto createDto, String iconUrl) {
         Tema topic = new Tema();
-        topic.setNameTopic(createDto.getNameTopic());
-        topic.setDescription(createDto.getDescription());
+        topic.setNameTopic(normalizeName(createDto.getNameTopic()));
+        topic.setDescription(normalizeDescription(createDto.getDescription()));
         topic.setIsActive(createDto.getIsActive() != null ? createDto.getIsActive() : true);
         if (iconUrl != null) {
             topic.setIcon(iconUrl);
@@ -91,7 +102,7 @@ public class TopicService {
             newIconUrl = fileStorageUtil.storeFile(iconFile);
         }
 
-        return applyTopicUpdate(id, nameTopic, description, isActive, newIconUrl);
+        return applyTopicUpdate(id, normalizeName(nameTopic), normalizeDescription(description), isActive, newIconUrl);
     }
 
     @Transactional

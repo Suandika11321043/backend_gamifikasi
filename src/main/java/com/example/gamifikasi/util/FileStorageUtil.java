@@ -12,6 +12,8 @@ import java.util.Map;
 @Component
 public class FileStorageUtil {
 
+    private static final long MAX_BYTES = 5 * 1024 * 1024;
+
     @Autowired
     private Cloudinary cloudinary;
 
@@ -31,11 +33,35 @@ public class FileStorageUtil {
      * @return secure URL dari Cloudinary
      */
     public String storeFile(MultipartFile file, String folder) throws IOException {
+        validateUpload(file, folder);
+        try {
+            String resourceType = detectResourceType(file);
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap("folder", folder, "resource_type", resourceType));
+            return uploadResult.get("secure_url").toString();
+        } catch (IOException e) {
+            throw new IllegalArgumentException(
+                    "Gagal mengunggah file. Pastikan format dan ukuran file valid (maks. 5MB).");
+        }
+    }
+
+    private void validateUpload(MultipartFile file, String folder) {
+        if (file == null || file.isEmpty()) {
+            return;
+        }
+        if (file.getSize() > MAX_BYTES) {
+            throw new IllegalArgumentException("Ukuran file maksimal 5MB.");
+        }
         String resourceType = detectResourceType(file);
-        Map<?, ?> uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap("folder", folder, "resource_type", resourceType));
-        return uploadResult.get("secure_url").toString();
+        boolean allowAudio = folder != null && folder.contains("audio");
+        if (allowAudio) {
+            if (!"image".equals(resourceType) && !"video".equals(resourceType)) {
+                throw new IllegalArgumentException("Tipe file tidak didukung. Gunakan gambar atau audio.");
+            }
+        } else if (!"image".equals(resourceType)) {
+            throw new IllegalArgumentException("Hanya file gambar yang didukung (JPG, PNG, WebP, dll.).");
+        }
     }
 
     /**

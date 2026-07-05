@@ -216,9 +216,9 @@ public class QuestionsController {
             @RequestBody java.util.Map<String, Object> body) {
         String dateStr = body.get("learningDate") != null ? body.get("learningDate").toString() : null;
         if (dateStr == null || dateStr.isBlank()) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Tanggal belajar wajib diisi.");
         }
-        LocalDate learningDate = LocalDate.parse(dateStr);
+        LocalDate learningDate = LocalDate.parse(dateStr.trim());
         boolean available = true;
         if (body.get("available") != null) {
             available = Boolean.parseBoolean(body.get("available").toString());
