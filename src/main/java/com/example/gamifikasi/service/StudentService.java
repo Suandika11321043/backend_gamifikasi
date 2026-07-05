@@ -55,12 +55,26 @@ public class StudentService {
         return dto;
     }
 
+    private String normalizeName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Nama siswa wajib diisi.");
+        }
+        return name.trim();
+    }
+
+    private String normalizeGroup(String group) {
+        if (group == null || group.isBlank()) {
+            throw new IllegalArgumentException("Grup siswa wajib diisi.");
+        }
+        return group.trim();
+    }
+
     // Create Student
     @Transactional
     public StudentDto createStudent(StudentDto studentDto, MultipartFile avatarFile) throws IOException {
         Student student = new Student();
-        student.setName(studentDto.getName());
-        student.setGroup(studentDto.getGroup());
+        student.setName(normalizeName(studentDto.getName()));
+        student.setGroup(normalizeGroup(studentDto.getGroup()));
 
         if (avatarFile != null && !avatarFile.isEmpty()) {
             String filename = fileStorageUtil.storeFile(avatarFile);
@@ -101,8 +115,8 @@ public class StudentService {
         }
 
         Student existing = existingOpt.get();
-        existing.setName(studentDto.getName());
-        existing.setGroup(studentDto.getGroup());
+        existing.setName(normalizeName(studentDto.getName()));
+        existing.setGroup(normalizeGroup(studentDto.getGroup()));
         if (avatarFile != null && !avatarFile.isEmpty()) {
             fileStorageUtil.deleteFile(existing.getAvatar());
             String filename = fileStorageUtil.storeFile(avatarFile);
