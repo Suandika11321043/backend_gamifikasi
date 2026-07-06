@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_ProsesManajemenTema" targetNamespace="http://www.bizagi.com/gamifikasi/bpmn">
+  <bpmn:collaboration>
+    <bpmn:participant id="Pool_ProsesManajemenTema" name="Mengelola Tema Pembelajaran" processRef="ProsesManajemenTema"/>
+  </bpmn:collaboration>
+  <bpmn:process id="ProsesManajemenTema" isExecutable="false">
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_ProsesManajemenTema" name="Admin (Guru)">
+        <bpmn:flowNodeRef>Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_access</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_login</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_menu</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>G_split</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_cari1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_cari2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_add1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_add2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_add3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_edit1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_edit2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_edit3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_del1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>G_del</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_del2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_del3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>G_merge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_show</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_akt1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T_det1</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start" name="Mulai">
+      <bpmn:outgoing>F_Start_T_access</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="T_access" name="Mengakses website">
+      <bpmn:incoming>F_Start_T_access</bpmn:incoming>
+      <bpmn:outgoing>F_T_access_T_login</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_login" name="Login">
+      <bpmn:incoming>F_T_access_T_login</bpmn:incoming>
+      <bpmn:outgoing>F_T_login_T_menu</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_menu" name="Klik menu manajemen tema">
+      <bpmn:incoming>F_T_login_T_menu</bpmn:incoming>
+      <bpmn:outgoing>F_T_menu_G_split</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="G_split" gatewayDirection="Diverging">
+      <bpmn:incoming>F_T_menu_G_split</bpmn:incoming>
+      <bpmn:outgoing>F_split_T_akt1</bpmn:outgoing>
+      <bpmn:outgoing>F_split_T_det1</bpmn:outgoing>
+      <bpmn:outgoing>F_split_cari</bpmn:outgoing>
+      <bpmn:outgoing>F_split_add</bpmn:outgoing>
+      <bpmn:outgoing>F_split_edit</bpmn:outgoing>
+      <bpmn:outgoing>F_split_del</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="T_cari1" name="Mengklik kolom cari tema">
+      <bpmn:incoming>F_split_cari</bpmn:incoming>
+      <bpmn:outgoing>F_cari1_cari2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_cari2" name="Memasukkan kriteria pencarian">
+      <bpmn:incoming>F_cari1_cari2</bpmn:incoming>
+      <bpmn:outgoing>F_cari2_merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_add1" name="Memilih tombol tambah tema">
+      <bpmn:incoming>F_split_add</bpmn:incoming>
+      <bpmn:outgoing>F_add1_add2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_add2" name="Mengisi data tambah tema">
+      <bpmn:incoming>F_add1_add2</bpmn:incoming>
+      <bpmn:outgoing>F_add2_add3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_add3" name="Memilih tombol simpan data">
+      <bpmn:incoming>F_add2_add3</bpmn:incoming>
+      <bpmn:outgoing>F_add3_merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_edit1" name="Memilih tombol edit">
+      <bpmn:incoming>F_split_edit</bpmn:incoming>
+      <bpmn:outgoing>F_edit1_edit2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_edit2" name="Memperbarui data tema">
+      <bpmn:incoming>F_edit1_edit2</bpmn:incoming>
+      <bpmn:outgoing>F_edit2_edit3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_edit3" name="Pilih tombol simpan">
+      <bpmn:incoming>F_edit2_edit3</bpmn:incoming>
+      <bpmn:outgoing>F_edit3_merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_del1" name="Memilih tombol delete">
+      <bpmn:incoming>F_split_del</bpmn:incoming>
+      <bpmn:outgoing>F_del1_gdel</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="G_del" gatewayDirection="Diverging">
+      <bpmn:incoming>F_del1_gdel</bpmn:incoming>
+      <bpmn:outgoing>F_gdel_hapus</bpmn:outgoing>
+      <bpmn:outgoing>F_gdel_batal</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="T_del2" name="Pilih tombol hapus">
+      <bpmn:incoming>F_gdel_hapus</bpmn:incoming>
+      <bpmn:outgoing>F_del2_merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_del3" name="Pilih tombol batal">
+      <bpmn:incoming>F_gdel_batal</bpmn:incoming>
+      <bpmn:outgoing>F_del3_merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="G_merge" gatewayDirection="Converging">
+      <bpmn:incoming>F_T_akt1_merge</bpmn:incoming>
+      <bpmn:incoming>F_T_det1_merge</bpmn:incoming>
+      <bpmn:incoming>F_cari2_merge</bpmn:incoming>
+      <bpmn:incoming>F_add3_merge</bpmn:incoming>
+      <bpmn:incoming>F_edit3_merge</bpmn:incoming>
+      <bpmn:incoming>F_del2_merge</bpmn:incoming>
+      <bpmn:incoming>F_del3_merge</bpmn:incoming>
+      <bpmn:outgoing>F_merge_show</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="T_show" name="Menampilkan data tema">
+      <bpmn:incoming>F_merge_show</bpmn:incoming>
+      <bpmn:outgoing>F_show_end</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End" name="Selesai">
+      <bpmn:incoming>F_show_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="T_akt1" name="Mengaktifkan / menonaktifkan tema">
+      <bpmn:incoming>F_split_T_akt1</bpmn:incoming>
+      <bpmn:outgoing>F_T_akt1_merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T_det1" name="Melihat detail tema">
+      <bpmn:incoming>F_split_T_det1</bpmn:incoming>
+      <bpmn:outgoing>F_T_det1_merge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_split_T_akt1" sourceRef="G_split" targetRef="T_akt1" name="Aktivasi"/>
+    <bpmn:sequenceFlow id="F_T_akt1_merge" sourceRef="T_akt1" targetRef="G_merge"/>
+    <bpmn:sequenceFlow id="F_split_T_det1" sourceRef="G_split" targetRef="T_det1" name="Detail"/>
+    <bpmn:sequenceFlow id="F_T_det1_merge" sourceRef="T_det1" targetRef="G_merge"/>
+    <bpmn:sequenceFlow id="F_Start_T_access" sourceRef="Start" targetRef="T_access"/>
+    <bpmn:sequenceFlow id="F_T_access_T_login" sourceRef="T_access" targetRef="T_login"/>
+    <bpmn:sequenceFlow id="F_T_login_T_menu" sourceRef="T_login" targetRef="T_menu"/>
+    <bpmn:sequenceFlow id="F_T_menu_G_split" sourceRef="T_menu" targetRef="G_split"/>
+    <bpmn:sequenceFlow id="F_split_cari" sourceRef="G_split" targetRef="T_cari1" name="Cari"/>
+    <bpmn:sequenceFlow id="F_cari1_cari2" sourceRef="T_cari1" targetRef="T_cari2"/>
+    <bpmn:sequenceFlow id="F_cari2_merge" sourceRef="T_cari2" targetRef="G_merge"/>
+    <bpmn:sequenceFlow id="F_split_add" sourceRef="G_split" targetRef="T_add1" name="Tambah"/>
+    <bpmn:sequenceFlow id="F_add1_add2" sourceRef="T_add1" targetRef="T_add2"/>
+    <bpmn:sequenceFlow id="F_add2_add3" sourceRef="T_add2" targetRef="T_add3"/>
+    <bpmn:sequenceFlow id="F_add3_merge" sourceRef="T_add3" targetRef="G_merge"/>
+    <bpmn:sequenceFlow id="F_split_edit" sourceRef="G_split" targetRef="T_edit1" name="Edit"/>
+    <bpmn:sequenceFlow id="F_edit1_edit2" sourceRef="T_edit1" targetRef="T_edit2"/>
+    <bpmn:sequenceFlow id="F_edit2_edit3" sourceRef="T_edit2" targetRef="T_edit3"/>
+    <bpmn:sequenceFlow id="F_edit3_merge" sourceRef="T_edit3" targetRef="G_merge"/>
+    <bpmn:sequenceFlow id="F_split_del" sourceRef="G_split" targetRef="T_del1" name="Hapus"/>
+    <bpmn:sequenceFlow id="F_del1_gdel" sourceRef="T_del1" targetRef="G_del"/>
+    <bpmn:sequenceFlow id="F_gdel_hapus" sourceRef="G_del" targetRef="T_del2" name="Ya"/>
+    <bpmn:sequenceFlow id="F_gdel_batal" sourceRef="G_del" targetRef="T_del3" name="Tidak"/>
+    <bpmn:sequenceFlow id="F_del2_merge" sourceRef="T_del2" targetRef="G_merge"/>
+    <bpmn:sequenceFlow id="F_del3_merge" sourceRef="T_del3" targetRef="G_merge"/>
+    <bpmn:sequenceFlow id="F_merge_show" sourceRef="G_merge" targetRef="T_show"/>
+    <bpmn:sequenceFlow id="F_show_end" sourceRef="T_show" targetRef="End"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_ProsesManajemenTema">
+    <bpmndi:BPMNPlane id="Plane_ProsesManajemenTema" bpmnElement="Pool_ProsesManajemenTema">
+      <bpmndi:BPMNShape id="Pool_ProsesManajemenTema_di" bpmnElement="Pool_ProsesManajemenTema" isHorizontal="true">
+        <dc:Bounds x="120" y="60" width="1791" height="675"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_ProsesManajemenTema_di" bpmnElement="Lane_ProsesManajemenTema" isHorizontal="true">
+        <dc:Bounds x="150" y="60" width="1761" height="675"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="170" y="317" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_access_di" bpmnElement="T_access">
+        <dc:Bounds x="250" y="300" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_login_di" bpmnElement="T_login">
+        <dc:Bounds x="430" y="300" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_menu_di" bpmnElement="T_menu">
+        <dc:Bounds x="610" y="300" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G_split_di" bpmnElement="G_split">
+        <dc:Bounds x="800" y="295" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_cari1_di" bpmnElement="T_cari1">
+        <dc:Bounds x="880" y="70" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_cari2_di" bpmnElement="T_cari2">
+        <dc:Bounds x="1055" y="70" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_add1_di" bpmnElement="T_add1">
+        <dc:Bounds x="880" y="155" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_add2_di" bpmnElement="T_add2">
+        <dc:Bounds x="1055" y="155" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_add3_di" bpmnElement="T_add3">
+        <dc:Bounds x="1230" y="155" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_edit1_di" bpmnElement="T_edit1">
+        <dc:Bounds x="880" y="240" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_edit2_di" bpmnElement="T_edit2">
+        <dc:Bounds x="1055" y="240" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_edit3_di" bpmnElement="T_edit3">
+        <dc:Bounds x="1230" y="240" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_del1_di" bpmnElement="T_del1">
+        <dc:Bounds x="880" y="495" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G_del_di" bpmnElement="G_del">
+        <dc:Bounds x="1065" y="490" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_del2_di" bpmnElement="T_del2">
+        <dc:Bounds x="1140" y="465" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_del3_di" bpmnElement="T_del3">
+        <dc:Bounds x="1140" y="535" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G_merge_di" bpmnElement="G_merge">
+        <dc:Bounds x="1465" y="335" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_show_di" bpmnElement="T_show">
+        <dc:Bounds x="1545" y="340" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End">
+        <dc:Bounds x="1725" y="357" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_akt1_di" bpmnElement="T_akt1">
+        <dc:Bounds x="880" y="325" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T_det1_di" bpmnElement="T_det1">
+        <dc:Bounds x="880" y="410" width="150" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="F_split_T_akt1_di" bpmnElement="F_split_T_akt1">
+        <di:waypoint x="850" y="320"/>
+        <di:waypoint x="885" y="320"/>
+        <di:waypoint x="885" y="360"/>
+        <di:waypoint x="880" y="360"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="890" y="332" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_T_akt1_merge_di" bpmnElement="F_T_akt1_merge">
+        <di:waypoint x="1030" y="360"/>
+        <di:waypoint x="1065" y="360"/>
+        <di:waypoint x="1065" y="360"/>
+        <di:waypoint x="1465" y="360"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_split_T_det1_di" bpmnElement="F_split_T_det1">
+        <di:waypoint x="850" y="320"/>
+        <di:waypoint x="885" y="320"/>
+        <di:waypoint x="885" y="445"/>
+        <di:waypoint x="880" y="445"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="890" y="374" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_T_det1_merge_di" bpmnElement="F_T_det1_merge">
+        <di:waypoint x="1030" y="445"/>
+        <di:waypoint x="1065" y="445"/>
+        <di:waypoint x="1065" y="360"/>
+        <di:waypoint x="1465" y="360"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_Start_T_access_di" bpmnElement="F_Start_T_access">
+        <di:waypoint x="206" y="335"/>
+        <di:waypoint x="250" y="335"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_T_access_T_login_di" bpmnElement="F_T_access_T_login">
+        <di:waypoint x="400" y="335"/>
+        <di:waypoint x="435" y="335"/>
+        <di:waypoint x="435" y="335"/>
+        <di:waypoint x="430" y="335"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_T_login_T_menu_di" bpmnElement="F_T_login_T_menu">
+        <di:waypoint x="580" y="335"/>
+        <di:waypoint x="615" y="335"/>
+        <di:waypoint x="615" y="335"/>
+        <di:waypoint x="610" y="335"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_T_menu_G_split_di" bpmnElement="F_T_menu_G_split">
+        <di:waypoint x="760" y="335"/>
+        <di:waypoint x="800" y="320"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_split_cari_di" bpmnElement="F_split_cari">
+        <di:waypoint x="850" y="320"/>
+        <di:waypoint x="885" y="320"/>
+        <di:waypoint x="885" y="105"/>
+        <di:waypoint x="880" y="105"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="890" y="204" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_cari1_cari2_di" bpmnElement="F_cari1_cari2">
+        <di:waypoint x="1030" y="105"/>
+        <di:waypoint x="1065" y="105"/>
+        <di:waypoint x="1065" y="105"/>
+        <di:waypoint x="1055" y="105"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_cari2_merge_di" bpmnElement="F_cari2_merge">
+        <di:waypoint x="1205" y="105"/>
+        <di:waypoint x="1240" y="105"/>
+        <di:waypoint x="1240" y="360"/>
+        <di:waypoint x="1465" y="360"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_split_add_di" bpmnElement="F_split_add">
+        <di:waypoint x="850" y="320"/>
+        <di:waypoint x="885" y="320"/>
+        <di:waypoint x="885" y="190"/>
+        <di:waypoint x="880" y="190"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="890" y="247" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_add1_add2_di" bpmnElement="F_add1_add2">
+        <di:waypoint x="1030" y="190"/>
+        <di:waypoint x="1065" y="190"/>
+        <di:waypoint x="1065" y="190"/>
+        <di:waypoint x="1055" y="190"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_add2_add3_di" bpmnElement="F_add2_add3">
+        <di:waypoint x="1205" y="190"/>
+        <di:waypoint x="1240" y="190"/>
+        <di:waypoint x="1240" y="190"/>
+        <di:waypoint x="1230" y="190"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_add3_merge_di" bpmnElement="F_add3_merge">
+        <di:waypoint x="1380" y="190"/>
+        <di:waypoint x="1415" y="190"/>
+        <di:waypoint x="1415" y="360"/>
+        <di:waypoint x="1465" y="360"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_split_edit_di" bpmnElement="F_split_edit">
+        <di:waypoint x="850" y="320"/>
+        <di:waypoint x="880" y="275"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="835" y="298" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_edit1_edit2_di" bpmnElement="F_edit1_edit2">
+        <di:waypoint x="1030" y="275"/>
+        <di:waypoint x="1065" y="275"/>
+        <di:waypoint x="1065" y="275"/>
+        <di:waypoint x="1055" y="275"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_edit2_edit3_di" bpmnElement="F_edit2_edit3">
+        <di:waypoint x="1205" y="275"/>
+        <di:waypoint x="1240" y="275"/>
+        <di:waypoint x="1240" y="275"/>
+        <di:waypoint x="1230" y="275"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_edit3_merge_di" bpmnElement="F_edit3_merge">
+        <di:waypoint x="1380" y="275"/>
+        <di:waypoint x="1415" y="275"/>
+        <di:waypoint x="1415" y="360"/>
+        <di:waypoint x="1465" y="360"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_split_del_di" bpmnElement="F_split_del">
+        <di:waypoint x="850" y="320"/>
+        <di:waypoint x="885" y="320"/>
+        <di:waypoint x="885" y="530"/>
+        <di:waypoint x="880" y="530"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="890" y="417" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_del1_gdel_di" bpmnElement="F_del1_gdel">
+        <di:waypoint x="1030" y="530"/>
+        <di:waypoint x="1065" y="515"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_gdel_hapus_di" bpmnElement="F_gdel_hapus">
+        <di:waypoint x="1115" y="515"/>
+        <di:waypoint x="1140" y="500"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1097" y="493" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_gdel_batal_di" bpmnElement="F_gdel_batal">
+        <di:waypoint x="1115" y="515"/>
+        <di:waypoint x="1150" y="515"/>
+        <di:waypoint x="1150" y="570"/>
+        <di:waypoint x="1140" y="570"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1155" y="534" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_del2_merge_di" bpmnElement="F_del2_merge">
+        <di:waypoint x="1290" y="500"/>
+        <di:waypoint x="1325" y="500"/>
+        <di:waypoint x="1325" y="360"/>
+        <di:waypoint x="1465" y="360"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_del3_merge_di" bpmnElement="F_del3_merge">
+        <di:waypoint x="1290" y="570"/>
+        <di:waypoint x="1325" y="570"/>
+        <di:waypoint x="1325" y="360"/>
+        <di:waypoint x="1465" y="360"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_merge_show_di" bpmnElement="F_merge_show">
+        <di:waypoint x="1515" y="360"/>
+        <di:waypoint x="1550" y="360"/>
+        <di:waypoint x="1550" y="375"/>
+        <di:waypoint x="1545" y="375"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_show_end_di" bpmnElement="F_show_end">
+        <di:waypoint x="1695" y="375"/>
+        <di:waypoint x="1730" y="375"/>
+        <di:waypoint x="1730" y="375"/>
+        <di:waypoint x="1725" y="375"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

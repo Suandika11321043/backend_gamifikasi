@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_ProsesDashboardAdmin" targetNamespace="http://www.bizagi.com/gamifikasi/bpmn">
+  <bpmn:collaboration>
+    <bpmn:participant id="Pool_ProsesDashboardAdmin" name="Proses Bisnis Melihat Dashboard" processRef="ProsesDashboardAdmin"/>
+  </bpmn:collaboration>
+  <bpmn:process id="ProsesDashboardAdmin" isExecutable="false">
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_ProsesDashboardAdmin" name="Admin (Guru)">
+        <bpmn:flowNodeRef>Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start" name="Mulai">
+      <bpmn:outgoing>F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="T1" name="Membuka menu dashboard">
+      <bpmn:incoming>F1</bpmn:incoming>
+      <bpmn:outgoing>F2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T2" name="Menampilkan statistik">
+      <bpmn:incoming>F2</bpmn:incoming>
+      <bpmn:outgoing>F3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T3" name="Menampilkan leaderboard siswa">
+      <bpmn:incoming>F3</bpmn:incoming>
+      <bpmn:outgoing>F4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End" name="Selesai">
+      <bpmn:incoming>F4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="F1" sourceRef="Start" targetRef="T1"/>
+    <bpmn:sequenceFlow id="F2" sourceRef="T1" targetRef="T2"/>
+    <bpmn:sequenceFlow id="F3" sourceRef="T2" targetRef="T3"/>
+    <bpmn:sequenceFlow id="F4" sourceRef="T3" targetRef="End"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_ProsesDashboardAdmin">
+    <bpmndi:BPMNPlane id="Plane_ProsesDashboardAdmin" bpmnElement="Pool_ProsesDashboardAdmin">
+      <bpmndi:BPMNShape id="Pool_ProsesDashboardAdmin_di" bpmnElement="Pool_ProsesDashboardAdmin" isHorizontal="true">
+        <dc:Bounds x="120" y="60" width="836" height="210"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_ProsesDashboardAdmin_di" bpmnElement="Lane_ProsesDashboardAdmin" isHorizontal="true">
+        <dc:Bounds x="150" y="60" width="806" height="210"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="240" y="170" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T1_di" bpmnElement="T1">
+        <dc:Bounds x="390" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T2_di" bpmnElement="T2">
+        <dc:Bounds x="540" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T3_di" bpmnElement="T3">
+        <dc:Bounds x="690" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End">
+        <dc:Bounds x="840" y="170" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="F1_di" bpmnElement="F1">
+        <di:waypoint x="276" y="188"/>
+        <di:waypoint x="311" y="188"/>
+        <di:waypoint x="311" y="205"/>
+        <di:waypoint x="390" y="205"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F2_di" bpmnElement="F2">
+        <di:waypoint x="530" y="205"/>
+        <di:waypoint x="565" y="205"/>
+        <di:waypoint x="565" y="205"/>
+        <di:waypoint x="540" y="205"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F3_di" bpmnElement="F3">
+        <di:waypoint x="680" y="205"/>
+        <di:waypoint x="715" y="205"/>
+        <di:waypoint x="715" y="205"/>
+        <di:waypoint x="690" y="205"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F4_di" bpmnElement="F4">
+        <di:waypoint x="830" y="205"/>
+        <di:waypoint x="840" y="188"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

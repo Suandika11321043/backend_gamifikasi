@@ -6,6 +6,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -40,9 +41,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/login", "/api/auth/register-admin").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/students", "/api/students/**", "/api/topics", "/api/topics/**", "/api/quiz/**", "/api/uploads/**", "/api/matching-relations", "/api/matching-relations/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/submit", "/api/quiz/submit/answer", "/api/quiz/finish").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                        "/api/students", "/api/students/**",
+                        "/api/topics", "/api/topics/**",
+                        "/api/uploads/**",
+                        "/api/matching-relations", "/api/matching-relations/**")
+                .permitAll()
+                .requestMatchers("/api/quiz/**", "/api/quiz/submit").permitAll()
                 .requestMatchers("/api/matching-relations", "/api/matching-relations/**").permitAll()
                 .anyRequest().authenticated()
             )

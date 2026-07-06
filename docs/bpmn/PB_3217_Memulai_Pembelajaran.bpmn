@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_ProsesMemulaiPembelajaran" targetNamespace="http://www.bizagi.com/gamifikasi/bpmn">
+  <bpmn:collaboration>
+    <bpmn:participant id="Pool_ProsesMemulaiPembelajaran" name="Proses Bisnis Memulai Pembelajaran" processRef="ProsesMemulaiPembelajaran"/>
+  </bpmn:collaboration>
+  <bpmn:process id="ProsesMemulaiPembelajaran" isExecutable="false">
+    <bpmn:laneSet>
+      <bpmn:lane id="Lane_ProsesMemulaiPembelajaran" name="Siswa">
+        <bpmn:flowNodeRef>Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>G1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T6</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start" name="Mulai">
+      <bpmn:outgoing>F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="T1" name="Menekan tombol mulai">
+      <bpmn:incoming>F1</bpmn:incoming>
+      <bpmn:outgoing>F2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T2" name="Memilih profil siswa">
+      <bpmn:incoming>F2</bpmn:incoming>
+      <bpmn:outgoing>F3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T3" name="Memilih tema pembelajaran">
+      <bpmn:incoming>F3</bpmn:incoming>
+      <bpmn:outgoing>F4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T4" name="Memilih tanggal belajar">
+      <bpmn:incoming>F4</bpmn:incoming>
+      <bpmn:outgoing>F5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="T5" name="Menjawab soal">
+      <bpmn:incoming>F5</bpmn:incoming>
+      <bpmn:incoming>F7</bpmn:incoming>
+      <bpmn:outgoing>F6</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="G1" gatewayDirection="Diverging">
+      <bpmn:incoming>F6</bpmn:incoming>
+      <bpmn:outgoing>F7</bpmn:outgoing>
+      <bpmn:outgoing>F8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="T6" name="Menampilkan hasil belajar">
+      <bpmn:incoming>F8</bpmn:incoming>
+      <bpmn:outgoing>F9</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End" name="Selesai">
+      <bpmn:incoming>F9</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="F1" sourceRef="Start" targetRef="T1"/>
+    <bpmn:sequenceFlow id="F2" sourceRef="T1" targetRef="T2"/>
+    <bpmn:sequenceFlow id="F3" sourceRef="T2" targetRef="T3"/>
+    <bpmn:sequenceFlow id="F4" sourceRef="T3" targetRef="T4"/>
+    <bpmn:sequenceFlow id="F5" sourceRef="T4" targetRef="T5"/>
+    <bpmn:sequenceFlow id="F6" sourceRef="T5" targetRef="G1"/>
+    <bpmn:sequenceFlow id="F7" sourceRef="G1" targetRef="T5" name="Masih ada soal"/>
+    <bpmn:sequenceFlow id="F8" sourceRef="G1" targetRef="T6" name="Selesai"/>
+    <bpmn:sequenceFlow id="F9" sourceRef="T6" targetRef="End"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_ProsesMemulaiPembelajaran">
+    <bpmndi:BPMNPlane id="Plane_ProsesMemulaiPembelajaran" bpmnElement="Pool_ProsesMemulaiPembelajaran">
+      <bpmndi:BPMNShape id="Pool_ProsesMemulaiPembelajaran_di" bpmnElement="Pool_ProsesMemulaiPembelajaran" isHorizontal="true">
+        <dc:Bounds x="120" y="60" width="1436" height="215"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_ProsesMemulaiPembelajaran_di" bpmnElement="Lane_ProsesMemulaiPembelajaran" isHorizontal="true">
+        <dc:Bounds x="150" y="60" width="1406" height="215"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="240" y="170" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T1_di" bpmnElement="T1">
+        <dc:Bounds x="390" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T2_di" bpmnElement="T2">
+        <dc:Bounds x="540" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T3_di" bpmnElement="T3">
+        <dc:Bounds x="690" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T4_di" bpmnElement="T4">
+        <dc:Bounds x="840" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T5_di" bpmnElement="T5">
+        <dc:Bounds x="990" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G1_di" bpmnElement="G1">
+        <dc:Bounds x="1140" y="165" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T6_di" bpmnElement="T6">
+        <dc:Bounds x="1290" y="170" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End">
+        <dc:Bounds x="1440" y="170" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="F1_di" bpmnElement="F1">
+        <di:waypoint x="276" y="188"/>
+        <di:waypoint x="311" y="188"/>
+        <di:waypoint x="311" y="205"/>
+        <di:waypoint x="390" y="205"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F2_di" bpmnElement="F2">
+        <di:waypoint x="530" y="205"/>
+        <di:waypoint x="565" y="205"/>
+        <di:waypoint x="565" y="205"/>
+        <di:waypoint x="540" y="205"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F3_di" bpmnElement="F3">
+        <di:waypoint x="680" y="205"/>
+        <di:waypoint x="715" y="205"/>
+        <di:waypoint x="715" y="205"/>
+        <di:waypoint x="690" y="205"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F4_di" bpmnElement="F4">
+        <di:waypoint x="830" y="205"/>
+        <di:waypoint x="865" y="205"/>
+        <di:waypoint x="865" y="205"/>
+        <di:waypoint x="840" y="205"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F5_di" bpmnElement="F5">
+        <di:waypoint x="980" y="205"/>
+        <di:waypoint x="1015" y="205"/>
+        <di:waypoint x="1015" y="205"/>
+        <di:waypoint x="990" y="205"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F6_di" bpmnElement="F6">
+        <di:waypoint x="1130" y="205"/>
+        <di:waypoint x="1140" y="190"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F7_di" bpmnElement="F7">
+        <di:waypoint x="1165" y="165"/>
+        <di:waypoint x="1165" y="125"/>
+        <di:waypoint x="1060" y="125"/>
+        <di:waypoint x="1060" y="170"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1065" y="107" width="90" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F8_di" bpmnElement="F8">
+        <di:waypoint x="1190" y="190"/>
+        <di:waypoint x="1225" y="190"/>
+        <di:waypoint x="1225" y="205"/>
+        <di:waypoint x="1290" y="205"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1230" y="189" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F9_di" bpmnElement="F9">
+        <di:waypoint x="1430" y="205"/>
+        <di:waypoint x="1440" y="188"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

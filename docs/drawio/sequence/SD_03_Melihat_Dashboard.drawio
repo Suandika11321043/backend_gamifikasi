@@ -1,0 +1,27 @@
+<mxfile host="app.diagrams.net" agent="generate_sequence_drawio.py" version="24.7.0" type="device">
+  <diagram id="SD_03_Melihat_Dashboard" name="Sequence Diagram Melihat Dashboard">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="622" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="Sequence Diagram Melihat Dashboard" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1" vertex="1" parent="1"><mxGeometry x="40" y="10" width="780" height="30" as="geometry"/></mxCell>
+        <mxCell id="3" value="Admin" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1"><mxGeometry x="85" y="40" width="30" height="60" as="geometry"/></mxCell>
+        <mxCell id="4" value="" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=none;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="110" as="sourcePoint"/><mxPoint x="100" y="552" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="5" value="Dashboard View" style="shape=umlBoundary;whiteSpace=wrap;html=1;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;" vertex="1" parent="1"><mxGeometry x="270" y="45" width="90" height="50" as="geometry"/></mxCell>
+        <mxCell id="6" value="" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=none;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="300" y="110" as="sourcePoint"/><mxPoint x="300" y="552" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="7" value="Dashboard Controller" style="shape=umlControl;whiteSpace=wrap;html=1;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;" vertex="1" parent="1"><mxGeometry x="475" y="45" width="50" height="50" as="geometry"/></mxCell>
+        <mxCell id="8" value="" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=none;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="500" y="110" as="sourcePoint"/><mxPoint x="500" y="552" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="9" value="Data Gamifikasi" style="shape=umlEntity;whiteSpace=wrap;html=1;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;" vertex="1" parent="1"><mxGeometry x="675" y="45" width="50" height="50" as="geometry"/></mxCell>
+        <mxCell id="10" value="" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=none;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="700" y="110" as="sourcePoint"/><mxPoint x="700" y="552" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="11" value="buka halaman dashboard" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=block;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="170" as="sourcePoint"/><mxPoint x="300" y="170" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="12" value="get data dashboard" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=block;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="300" y="214" as="sourcePoint"/><mxPoint x="500" y="214" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="13" value="ambil total siswa, soal, dan tema" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=block;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="500" y="258" as="sourcePoint"/><mxPoint x="700" y="258" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="14" value="data statistik" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=block;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="700" y="302" as="sourcePoint"/><mxPoint x="500" y="302" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="15" value="ambil peringkat siswa" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=block;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="500" y="346" as="sourcePoint"/><mxPoint x="700" y="346" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="16" value="data peringkat" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=block;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="700" y="390" as="sourcePoint"/><mxPoint x="500" y="390" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="17" value="data dashboard" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=block;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="500" y="434" as="sourcePoint"/><mxPoint x="300" y="434" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="18" value="tampilkan statistik dan peringkat" style="html=1;verticalAlign=bottom;rounded=0;fontSize=11;endArrow=block;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="300" y="478" as="sourcePoint"/><mxPoint x="100" y="478" as="targetPoint"/></mxGeometry></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
