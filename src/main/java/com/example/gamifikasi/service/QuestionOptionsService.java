@@ -55,7 +55,7 @@ public class QuestionOptionsService {
         opt.setUrutanBenar(urutanBenar);
         opt.setTipeItem(tipeItem != null ? tipeItem : QuestionOptions.TipeItem.JAWABAN);
         if (mediaOpsiFile != null && !mediaOpsiFile.isEmpty()) {
-            opt.setMediaOpsi(fileStorageUtil.storeFile(mediaOpsiFile));
+            opt.setMediaOpsi(fileStorageUtil.storeFile(mediaOpsiFile, "question-options"));
         }
         return convertToDto(questionOptionsRepository.save(opt));
     }
@@ -100,7 +100,7 @@ public class QuestionOptionsService {
         opt.setTipeItem(tipeItem != null ? tipeItem : QuestionOptions.TipeItem.JAWABAN);
         if (mediaOpsiFile != null && !mediaOpsiFile.isEmpty()) {
             fileStorageUtil.deleteFile(opt.getMediaOpsi());
-            opt.setMediaOpsi(fileStorageUtil.storeFile(mediaOpsiFile));
+            opt.setMediaOpsi(fileStorageUtil.storeFile(mediaOpsiFile, "question-options"));
         }
         return Optional.of(convertToDto(questionOptionsRepository.save(opt)));
     }

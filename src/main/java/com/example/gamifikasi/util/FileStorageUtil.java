@@ -54,7 +54,8 @@ public class FileStorageUtil {
             throw new IllegalArgumentException("Ukuran file maksimal 5MB.");
         }
         String resourceType = detectResourceType(file);
-        boolean allowAudio = folder != null && folder.contains("audio");
+        boolean allowAudio = folder != null && (
+                folder.contains("audio") || folder.contains("question-options"));
         if (allowAudio) {
             if (!"image".equals(resourceType) && !"video".equals(resourceType)) {
                 throw new IllegalArgumentException("Tipe file tidak didukung. Gunakan gambar atau audio.");
