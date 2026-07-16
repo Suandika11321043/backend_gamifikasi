@@ -24,11 +24,13 @@ public class StudentController {
     public ResponseEntity<StudentDto> createStudent(
             @RequestParam("name") String name,
             @RequestParam("group") String group,
-            @RequestPart(value = "avatar", required = false) MultipartFile avatarFile) {
+            @RequestParam(value = "avatarKey", required = false) String avatarKey,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
         try {
             StudentDto studentDto = new StudentDto();
             studentDto.setName(name);
             studentDto.setGroup(group);
+            studentDto.setAvatar(avatarKey);
             StudentDto created = studentService.createStudent(studentDto, avatarFile);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (RuntimeException e) {
@@ -93,11 +95,13 @@ public class StudentController {
             @PathVariable("id") Long id,
             @RequestParam("name") String name,
             @RequestParam("group") String group,
-            @RequestPart(value = "avatar", required = false) MultipartFile avatarFile) {
+            @RequestParam(value = "avatarKey", required = false) String avatarKey,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile) {
         try {
             StudentDto studentDto = new StudentDto();
             studentDto.setName(name);
             studentDto.setGroup(group);
+            studentDto.setAvatar(avatarKey);
             Optional<StudentDto> updated = studentService.updateStudent(id, studentDto, avatarFile);
             if (updated.isPresent()) {
                 return new ResponseEntity<>(updated.get(), HttpStatus.OK);

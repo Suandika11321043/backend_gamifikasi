@@ -69,6 +69,30 @@ public class StudentService {
         return group.trim();
     }
 
+    private boolean isGeneratedAvatar(String avatar) {
+        return avatar != null && avatar.startsWith("generated:");
+    }
+
+    /** Samakan format lama generated:boy:0 / generated:girl:2 ke generated:boy|girl. */
+    private String normalizeGeneratedAvatar(String avatar) {
+        if (avatar == null) return null;
+        String trimmed = avatar.trim();
+        if (trimmed.startsWith("generated:girl")) return "generated:girl";
+        if (trimmed.startsWith("generated:boy")) return "generated:boy";
+        return trimmed;
+    }
+
+    private void deleteStoredAvatarIfNeeded(String avatar) {
+        if (avatar == null || avatar.isBlank() || isGeneratedAvatar(avatar)) {
+            return;
+        }
+        try {
+            fileStorageUtil.deleteFile(avatar);
+        } catch (IOException e) {
+            // continue without failing the main operation
+        }
+    }
+
     // Create Student
     @Transactional
     public StudentDto createStudent(StudentDto studentDto, MultipartFile avatarFile) throws IOException {
@@ -79,6 +103,8 @@ public class StudentService {
         if (avatarFile != null && !avatarFile.isEmpty()) {
             String filename = fileStorageUtil.storeFile(avatarFile);
             student.setAvatar(filename);
+        } else if (isGeneratedAvatar(studentDto.getAvatar())) {
+            student.setAvatar(normalizeGeneratedAvatar(studentDto.getAvatar()));
         }
 
         Student saved = studentRepository.save(student);
@@ -118,9 +144,14 @@ public class StudentService {
         existing.setName(normalizeName(studentDto.getName()));
         existing.setGroup(normalizeGroup(studentDto.getGroup()));
         if (avatarFile != null && !avatarFile.isEmpty()) {
-            fileStorageUtil.deleteFile(existing.getAvatar());
+            deleteStoredAvatarIfNeeded(existing.getAvatar());
             String filename = fileStorageUtil.storeFile(avatarFile);
             existing.setAvatar(filename);
+        } else if (isGeneratedAvatar(studentDto.getAvatar())) {
+            if (!normalizeGeneratedAvatar(studentDto.getAvatar()).equals(existing.getAvatar())) {
+                deleteStoredAvatarIfNeeded(existing.getAvatar());
+            }
+            existing.setAvatar(normalizeGeneratedAvatar(studentDto.getAvatar()));
         }
 
         Student updated = studentRepository.save(existing);
@@ -137,7 +168,11 @@ public class StudentService {
                     studentAnswerRepository.deleteByStudentId(studentId);
                         studentScoreRepository.deleteByStudent(student);
                     try {
-                        fileStorageUtil.deleteFile(student.getAvatar());
+                        if (student.getAvatar() != null
+                                && !student.getAvatar().isBlank()
+                                && !student.getAvatar().startsWith("generated:")) {
+                            fileStorageUtil.deleteFile(student.getAvatar());
+                        }
                     } catch (IOException e) {
                         // log but continue with deletion
                     }
